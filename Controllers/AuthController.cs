@@ -155,140 +155,176 @@ namespace CMS.Controllers
                     return View("~/Views/CMS/Login.cshtml", model);
                 }
 
-                // Generate OTP
-                string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-                DateTime expiry = DateTime.UtcNow.AddMinutes(10);
+                //                // Generate OTP
+                //                string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                //                DateTime expiry = DateTime.UtcNow.AddMinutes(10);
 
-                await _authService.SaveOtpAsync(email, otp, expiry);
+                //                await _authService.SaveOtpAsync(email, otp, expiry);
 
-                // Send Email - Mobile CMS Branding
-                await _emailService.SendEmail(
-                    email,
-                    "Your authentication code for Mobile CMS",
-                    $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='UTF-8'>
-    <title>Authentication Code</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.5;
-            color: #24292f;
-            background-color: #f6f8fa;
-            margin: 0;
-            padding: 0;
-        }}
-        .container {{
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 20px;
-        }}
-        .header {{
-            background: linear-gradient(135deg, #0d1527, #0099cc);
-            padding: 24px 20px;
-            text-align: center;
-            border-radius: 8px 8px 0 0;
-        }}
-        .header h1 {{
-            color: #ffffff;
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }}
-        .content {{
-            background-color: #ffffff;
-            border: 1px solid #d0d7de;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            padding: 32px;
-        }}
-        .greeting {{
-            font-size: 16px;
-            margin-bottom: 20px;
-            color: #24292f;
-        }}
-        .code-box {{
-            background-color: #f6f8fa;
-            border: 1px solid #d0d7de;
-            border-radius: 8px;
-            padding: 16px 24px;
-            text-align: center;
-            margin: 24px 0;
-        }}
-        .code {{
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: 4px;
-            color: #0d1527;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-        }}
-        .warning {{
-            background-color: #fff8e7;
-            border-left: 4px solid #e3b341;
-            padding: 12px 16px;
-            margin: 24px 0;
-            font-size: 13px;
-            color: #5c3b00;
-        }}
-        .footer {{
-            margin-top: 32px;
-            padding-top: 16px;
-            border-top: 1px solid #d0d7de;
-            font-size: 12px;
-            color: #57606a;
-            text-align: center;
-        }}
-        .company {{
-            font-weight: 600;
-            color: #0d1527;
-        }}
-    </style>
-</head>
-<body>
-    <div class='container'>
-        <div class='header'>
-            <h1>Mobile CMS</h1>
-        </div>
-        <div class='content'>
-            <div class='greeting'>
-                <strong>Please verify your identity, {user.FullName ?? user.UserName ?? "User"}.</strong>
-            </div>
-            
-            <p>Here is your Mobile CMS authentication code:</p>
-            
-            <div class='code-box'>
-                <span class='code'>{otp}</span>
-            </div>
-            
-            <p>This code is valid for <strong>10 minutes</strong> and can only be used once.</p>
-            
-            <div class='warning'>
-                <strong>⚠️ Please don't share this code with anyone:</strong> we'll never ask for it on the phone or via email.
-            </div>
-            
-            <p style='font-size: 13px; color: #57606a;'>
-                If you didn't request this authentication code, please ignore this email. 
-                Your account is safe and no action is required.
-            </p>
-        </div>
-        <div class='footer'>
-            <p>You're receiving this email because a verification code was requested for your <span class='company'>Mobile CMS</span> account.</p>
-            <p>&copy; {DateTime.Now.Year} Mobile CMS. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>"
-                );
+                //                // Send Email - Mobile CMS Branding
+                //                await _emailService.SendEmail(
+                //                    email,
+                //                    "Your authentication code for Mobile CMS",
+                //                    $@"
+                //<!DOCTYPE html>
+                //<html>
+                //<head>
+                //    <meta charset='UTF-8'>
+                //    <title>Authentication Code</title>
+                //    <style>
+                //        body {{
+                //            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                //            line-height: 1.5;
+                //            color: #24292f;
+                //            background-color: #f6f8fa;
+                //            margin: 0;
+                //            padding: 0;
+                //        }}
+                //        .container {{
+                //            max-width: 520px;
+                //            margin: 0 auto;
+                //            padding: 20px;
+                //        }}
+                //        .header {{
+                //            background: linear-gradient(135deg, #0d1527, #0099cc);
+                //            padding: 24px 20px;
+                //            text-align: center;
+                //            border-radius: 8px 8px 0 0;
+                //        }}
+                //        .header h1 {{
+                //            color: #ffffff;
+                //            margin: 0;
+                //            font-size: 24px;
+                //            font-weight: 600;
+                //        }}
+                //        .content {{
+                //            background-color: #ffffff;
+                //            border: 1px solid #d0d7de;
+                //            border-top: none;
+                //            border-radius: 0 0 8px 8px;
+                //            padding: 32px;
+                //        }}
+                //        .greeting {{
+                //            font-size: 16px;
+                //            margin-bottom: 20px;
+                //            color: #24292f;
+                //        }}
+                //        .code-box {{
+                //            background-color: #f6f8fa;
+                //            border: 1px solid #d0d7de;
+                //            border-radius: 8px;
+                //            padding: 16px 24px;
+                //            text-align: center;
+                //            margin: 24px 0;
+                //        }}
+                //        .code {{
+                //            font-size: 32px;
+                //            font-weight: 600;
+                //            letter-spacing: 4px;
+                //            color: #0d1527;
+                //            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+                //        }}
+                //        .warning {{
+                //            background-color: #fff8e7;
+                //            border-left: 4px solid #e3b341;
+                //            padding: 12px 16px;
+                //            margin: 24px 0;
+                //            font-size: 13px;
+                //            color: #5c3b00;
+                //        }}
+                //        .footer {{
+                //            margin-top: 32px;
+                //            padding-top: 16px;
+                //            border-top: 1px solid #d0d7de;
+                //            font-size: 12px;
+                //            color: #57606a;
+                //            text-align: center;
+                //        }}
+                //        .company {{
+                //            font-weight: 600;
+                //            color: #0d1527;
+                //        }}
+                //    </style>
+                //</head>
+                //<body>
+                //    <div class='container'>
+                //        <div class='header'>
+                //            <h1>Mobile CMS</h1>
+                //        </div>
+                //        <div class='content'>
+                //            <div class='greeting'>
+                //                <strong>Please verify your identity, {user.FullName ?? user.UserName ?? "User"}.</strong>
+                //            </div>
 
-                // Store email in session
-                HttpContext.Session.SetString("MFA_Email", email);
-                HttpContext.Session.SetString("MFA_UserId", userId.ToString());
-                HttpContext.Session.SetString("MFA_RememberMe", model.RememberMe.ToString());
+                //            <p>Here is your Mobile CMS authentication code:</p>
 
-                // Redirect to OTP Page
-                return RedirectToAction("Authentication");
+                //            <div class='code-box'>
+                //                <span class='code'>{otp}</span>
+                //            </div>
+
+                //            <p>This code is valid for <strong>10 minutes</strong> and can only be used once.</p>
+
+                //            <div class='warning'>
+                //                <strong>⚠️ Please don't share this code with anyone:</strong> we'll never ask for it on the phone or via email.
+                //            </div>
+
+                //            <p style='font-size: 13px; color: #57606a;'>
+                //                If you didn't request this authentication code, please ignore this email. 
+                //                Your account is safe and no action is required.
+                //            </p>
+                //        </div>
+                //        <div class='footer'>
+                //            <p>You're receiving this email because a verification code was requested for your <span class='company'>Mobile CMS</span> account.</p>
+                //            <p>&copy; {DateTime.Now.Year} Mobile CMS. All rights reserved.</p>
+                //        </div>
+                //    </div>
+                //</body>
+                //</html>"
+                //                );
+
+                //                // Store email in session
+                //                HttpContext.Session.SetString("MFA_Email", email);
+                //                HttpContext.Session.SetString("MFA_UserId", userId.ToString());
+                //                HttpContext.Session.SetString("MFA_RememberMe", model.RememberMe.ToString());
+
+                //                // Redirect to OTP Page
+                //                return RedirectToAction("Authentication");
+
+                // TEMPORARY - Skip OTP for testing
+                // Directly sign in the user
+
+                var permissions = await _adminService.GetRolePermissions(user.RoleId);
+
+                var claims = new List<Claim>
+{
+    new Claim(ClaimTypes.NameIdentifier, user.UserId),
+    new Claim(ClaimTypes.Email, user.Email ?? ""),
+    new Claim(ClaimTypes.Name, user.FullName ?? ""),
+    new Claim(ClaimTypes.Role, user.RoleName ?? "User"),
+    new Claim("UserId", user.UserId),
+    new Claim("DepartmentId", user.DepartmentId.ToString()),
+    new Claim("RoleId", user.RoleId.ToString()),
+    new Claim("RoleName", user.RoleName ?? "User")
+};
+
+                foreach (var perm in permissions)
+                {
+                    claims.Add(new Claim($"Perm_{perm.ModuleName}_View", perm.CanView.ToString()));
+                    claims.Add(new Claim($"Perm_{perm.ModuleName}_Create", perm.CanCreate.ToString()));
+                    claims.Add(new Claim($"Perm_{perm.ModuleName}_Modify", perm.CanModify.ToString()));
+                    claims.Add(new Claim($"Perm_{perm.ModuleName}_Delete", perm.CanDelete.ToString()));
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = model.RememberMe,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), authProperties);
+
+                return RedirectToAction("Dashboard");
             }
             catch (Exception ex)
             {
