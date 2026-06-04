@@ -1,0 +1,1087 @@
+﻿@using System.Security.Claims
+@model List<CMS.Models.FormSummary>
+
+@{
+    ViewData["Title"] = ViewBag.PageTitle ?? "Form List";
+
+    var userName = User.Identity?.Name ?? "User";
+    var userRole = ViewBag.UserRole ?? "User";
+    var isAdmin = ViewBag.IsAdmin ?? false;
+
+    bool canDeleteForm = User.Claims.FirstOrDefault(c => c.Type == "Perm_Manage Forms_Delete")?.Value == "True";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EAM — @ViewBag.PageTitle</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <style>
+        * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        }
+
+        body {
+        font-family: 'Inter', sans-serif;
+        background: #060913;
+        color: #e8eef5;
+        min-height: 100vh;
+        overflow-x: hidden;
+        }
+
+        #bgVideo {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+        filter: brightness(0.4) blur(3px);
+        transform: scale(1.02);
+        }
+
+        .overlay-dark {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.65), rgba(8, 10, 18, 0.85));
+        backdrop-filter: blur(6px);
+        z-index: -1;
+        }
+
+        body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: -1;
+        pointer-events: none;
+        }
+
+        .main {
+        padding: 20px 28px;
+        position: relative;
+        z-index: 1;
+        }
+
+        .page-header {
+        margin-bottom: 20px;
+        }
+
+        .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        }
+
+        .admin-badge {
+        background: linear-gradient(135deg, #9b59ff, #00c8ff);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        }
+
+        .user-welcome {
+        font-size: 13px;
+        background: rgba(18, 20, 30, 0.65);
+        padding: 4px 12px;
+        border-radius: 40px;
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        }
+
+        .page-sub {
+        font-size: 12px;
+        color: #8a9db8;
+        margin-top: 4px;
+        }
+
+        .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+        background: rgba(18, 20, 30, 0.65) !important;
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.4rem 1.5rem;
+        transition: all 0.25s ease;
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-height: 120px;
+        }
+
+        .stat-card:hover {
+        transform: translateY(-4px);
+        background: rgba(28, 32, 48, 0.8) !important;
+        border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .stat-icon {
+        min-width: 64px;
+        width: 64px;
+        height: 64px;
+        border-radius: 22px;
+        background: rgba(59, 130, 246, 0.12) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3b82f6;
+        font-size: 26px;
+        flex-shrink: 0;
+        }
+
+        .stat-icon.blue,
+        .stat-icon.green,
+        .stat-icon.purple,
+        .stat-icon.amber {
+        background: rgba(59, 130, 246, 0.12) !important;
+        color: #3b82f6;
+        }
+
+        .stat-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        }
+
+        .stat-info h3 {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #9ca3af;
+        margin: 0 0 6px;
+        }
+
+        .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #ffffff;
+        line-height: 1;
+        margin: 0;
+        }
+
+        .search-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+        }
+
+        .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(18, 20, 30, 0.65) !important;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        min-width: 250px;
+        padding: 8px 14px;
+        backdrop-filter: blur(12px);
+        }
+
+        .search-box input {
+        background: none;
+        border: none;
+        outline: none;
+        color: #e8eef5;
+        font-size: 12px;
+        width: 100%;
+        }
+
+        .filter-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        }
+
+        .filter-chip {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(18, 20, 30, 0.65) !important;
+        color: #8a9db8;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(12px);
+        }
+
+        .filter-chip.active {
+        background: #00c8ff !important;
+        color: #060913;
+        }
+
+        .forms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+        }
+
+        .form-card {
+        background: rgba(18, 20, 30, 0.65) !important;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 28px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
+        }
+
+        .form-card:hover {
+        transform: translateY(-4px);
+        background: rgba(28, 32, 48, 0.8) !important;
+        border-color: rgba(59,130,246,0.4);
+        }
+
+        .card-header {
+        padding: 14px 18px;
+        background: linear-gradient(135deg, rgba(0,200,255,0.05), rgba(155,89,255,0.05));
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        }
+
+        .form-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        background: #1e293b;
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        }
+
+        .assigned-badge,
+        .form-status {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 20px;
+        }
+
+        .assigned-badge {
+        background: rgba(0,224,158,0.15);
+        color: #00e09e;
+        }
+
+        .status-active {
+        background: rgba(0,224,158,0.15);
+        color: #00e09e;
+        }
+
+        .status-inactive {
+        background: rgba(138,157,184,0.15);
+        color: #8a9db8;
+        }
+
+        .card-body {
+        padding: 14px 18px;
+        }
+
+        .form-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #e8eef5;
+        margin-bottom: 6px;
+        }
+
+        .form-description {
+        font-size: 12px;
+        color: #8a9db8;
+        margin-bottom: 12px;
+        line-height: 1.4;
+        }
+
+        .form-meta {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 10px;
+        color: #8a9db8;
+        flex-wrap: wrap;
+        }
+
+        .card-footer {
+        padding: 12px 18px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        }
+
+        .btn {
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 8px 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        }
+
+        .btn-primary {
+        background: linear-gradient(135deg, rgba(0,200,255,0.35), rgba(0,200,255,0.08));
+        border: 1px solid rgba(0,200,255,0.5);
+        color: #e8faff;
+        }
+
+        .btn-info {
+        background: linear-gradient(135deg, rgba(155,89,255,0.35), rgba(155,89,255,0.08));
+        border: 1px solid rgba(155,89,255,0.5);
+        color: #c4b5fd;
+        }
+
+        .btn-danger {
+        background: linear-gradient(135deg, rgba(255,71,87,0.35), rgba(255,71,87,0.08));
+        border: 1px solid rgba(255,71,87,0.5);
+        color: #ff8a7a;
+        }
+
+        .btn-outline {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #8a9db8;
+        }
+
+        .btn-outline.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        }
+
+        .btn:hover {
+        transform: translateY(-1px);
+        }
+
+        .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: rgba(18,20,30,0.65);
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        }
+
+        .toast-notification {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        background: rgba(18,20,30,0.85);
+        border-left: 3px solid;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        backdrop-filter: blur(12px);
+        }
+
+        .toast-success {
+        border-left-color: #00e09e;
+        }
+
+        .toast-error {
+        border-left-color: #ff4757;
+        }
+
+        .submissions-modal,
+        .detail-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        }
+
+        .detail-modal {
+        z-index: 1100;
+        background: rgba(0,0,0,0.95);
+        }
+
+        .submissions-modal.active,
+        .detail-modal.active {
+        display: flex;
+        }
+
+        .modal-container,
+        .detail-container {
+        background: rgba(18,20,30,0.9);
+        border: 1px solid rgba(0,200,255,0.3);
+        border-radius: 16px;
+        backdrop-filter: blur(12px);
+        }
+
+        .modal-container {
+        max-width: 900px;
+        width: 90%;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        }
+
+        .detail-container {
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        }
+
+        .modal-header,
+        .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .detail-header {
+        padding: 16px 20px;
+        }
+
+        .modal-header h3 {
+        font-size: 18px;
+        color: #00c8ff;
+        }
+
+        .close-modal {
+        background: none;
+        border: none;
+        color: #8a9db8;
+        font-size: 24px;
+        cursor: pointer;
+        }
+
+        .close-modal:hover {
+        color: #ff4757;
+        }
+
+        .modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        flex: 1;
+        }
+
+        .detail-body {
+        padding: 20px;
+        }
+
+        .submissions-stats {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        }
+
+        .submissions-stats .stat {
+        background: rgba(0,200,255,0.05);
+        border-radius: 8px;
+        padding: 8px 16px;
+        }
+
+        .submissions-stats .stat .count {
+        font-size: 20px;
+        font-weight: 700;
+        color: #00c8ff;
+        }
+
+        .submissions-stats .stat .label {
+        font-size: 10px;
+        color: #8a9db8;
+        }
+
+        .submissions-table {
+        width: 100%;
+        border-collapse: collapse;
+        }
+
+        .submissions-table th {
+        text-align: left;
+        padding: 10px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #8a9db8;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .submissions-table td {
+        padding: 10px 12px;
+        font-size: 12px;
+        color: #e8eef5;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .submissions-table tr:hover {
+        background: rgba(0,200,255,0.03);
+        }
+
+        .view-detail-btn {
+        background: rgba(0,200,255,0.1);
+        border: none;
+        color: #00c8ff;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 10px;
+        cursor: pointer;
+        }
+
+        .detail-field {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .detail-field .field-name {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #8a9db8;
+        margin-bottom: 6px;
+        }
+
+        .detail-field .field-value {
+        font-size: 13px;
+        color: #e8eef5;
+        word-break: break-word;
+        }
+
+        .loading-spinner,
+        .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #8a9db8;
+        }
+
+        .loading-spinner i {
+        font-size: 32px;
+        color: #00c8ff;
+        animation: spin 1s linear infinite;
+        }
+
+        .btn-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        }
+
+        @@keyframes spin {
+        from {
+        transform: rotate(0deg);
+        }
+
+        to {
+        transform: rotate(360deg);
+        }
+        }
+
+        @@keyframes slideIn {
+        from {
+        transform: translateX(100%);
+        opacity: 0;
+        }
+
+        to {
+        transform: translateX(0);
+        opacity: 1;
+        }
+        }
+
+        @@keyframes slideOut {
+        from {
+        transform: translateX(0);
+        opacity: 1;
+        }
+
+        to {
+        transform: translateX(100%);
+        opacity: 0;
+        }
+        }
+
+        @@media (max-width: 768px) {
+        .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        }
+
+        .forms-grid {
+        grid-template-columns: 1fr;
+        }
+        }
+    </style>
+</head>
+
+<body>
+    <video autoplay muted loop playsinline id="bgVideo">
+        <source src="~/assets/bg-1.mp4" type="video/mp4">
+    </video>
+    <div class="overlay-dark"></div>
+    <main class="main">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-file-alt"></i> @ViewBag.PageTitle
+                @if (isAdmin)
+                {
+                    <span class="admin-badge">Admin View</span>
+                }
+                <span class="user-welcome"><i class="fas fa-user"></i> @userName</span>
+            </h1>
+            <p class="page-sub">@ViewBag.PageSubtitle</p>
+        </div>
+
+        @{
+            var totalForms = 0;
+            var activeForms = 0;
+
+            if (Model != null)
+            {
+                totalForms = Model.Count;
+                foreach (var f in Model)
+                {
+                    if (f.IsActive == true) activeForms++;
+                }
+            }
+
+            var pendingForms = totalForms;
+        }
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">@totalForms</div>
+                    <h3>@(isAdmin ? "Total Forms" : "Assigned to You")</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">@activeForms</div>
+                    <h3>Active Forms</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">@pendingForms</div>
+                    <h3>Pending Submission</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon amber"><i class="fas fa-calendar"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">@DateTime.Now.ToString("dd MMM")</div>
+                    <h3>Last Updated</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search forms..." onkeyup="filterForms()">
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-chip active" onclick="filterByStatus(this, 'all')">All Forms</div>
+                <div class="filter-chip" onclick="filterByStatus(this, 'active')">Active</div>
+                <div class="filter-chip" onclick="filterByStatus(this, 'inactive')">Inactive</div>
+            </div>
+        </div>
+
+        @if (Model != null && Model.Count > 0)
+        {
+            <div class="forms-grid" id="formsGrid">
+                @foreach (var form in Model)
+                {
+                    var statusClass = (form.IsActive == true) ? "status-active" : "status-inactive";
+                    var statusText = (form.IsActive == true) ? "ACTIVE" : "INACTIVE";
+
+                    string createdDate = "N/A";
+                    if (form.CreatedAt != null)
+                    {
+                        try
+                        {
+                            createdDate = Convert.ToDateTime(form.CreatedAt).ToString("dd MMM yyyy");
+                        }
+                        catch
+                        {
+                            createdDate = "N/A";
+                        }
+                    }
+
+                    <div class="form-card" data-status="@(form.IsActive == true ? "active" : "inactive")" data-title="@(form.FormTitle != null ? form.FormTitle.ToLower() : "")" data-form-id="@form.FormId">
+                        <div class="card-header">
+                            <div class="form-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+
+                            <div style="display: flex; gap: 8px;">
+                                @if (!isAdmin)
+                                {
+                                    <span class="assigned-badge">
+                                        <i class="fas fa-user-check"></i> Assigned to You
+                                    </span>
+                                }
+                                <span class="form-status @statusClass">@statusText</span>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <h3 class="form-title">@(form.FormTitle ?? "Untitled Form")</h3>
+
+                            @if (!string.IsNullOrEmpty(form.FormDescription))
+                            {
+                                <p class="form-description">@form.FormDescription</p>
+                            }
+
+                            <div class="form-meta">
+                                <span><i class="fas fa-user"></i> @(form.CreatedBy ?? "Admin")</span>
+                                <span><i class="fas fa-calendar"></i> @createdDate</span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="btn-group">
+                                @if (form.IsActive == true)
+                                {
+                                    <a href="/Admin/SubmitForm/@form.FormId" class="btn btn-primary">
+                                        <i class="fas fa-pen-alt"></i> Fill Form
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline disabled" disabled>
+                                        <i class="fas fa-lock"></i> Inactive
+                                    </button>
+                                }
+
+                                <button class="btn btn-info" onclick="showSubmissions(@form.FormId, '@form.FormTitle.Replace("'", "\\'")')">
+                                    <i class="fas fa-eye"></i> View Submissions
+                                </button>
+                            </div>
+
+                            @if (canDeleteForm)
+                            {
+                                <button class="btn btn-danger" onclick="deleteForm(@form.FormId, '@form.FormTitle.Replace("'", "\\'")')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-folder-open" style="font-size: 48px; color: #4a6080; margin-bottom: 16px;"></i>
+                <h3 style="font-size: 18px; margin-bottom: 8px; color: #e8eef5;">@(isAdmin ? "No Forms Found" : "No Forms Assigned")</h3>
+                <p style="color: #8a9db8; margin-bottom: 16px; font-size: 13px;">@(isAdmin ? "No forms have been created yet." : "No forms have been assigned to you yet.")</p>
+
+                @if (isAdmin)
+                {
+                    <a href="/Admin/FormBuilder" class="btn btn-primary" style="display: inline-flex;">
+                        <i class="fas fa-plus"></i> Create New Form
+                    </a>
+                }
+            </div>
+        }
+    </main>
+
+    <div id="submissionsModal" class="submissions-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye"></i> <span id="modalFormTitle">Form Submissions</span></h3>
+                <button class="close-modal" onclick="closeSubmissionsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="submissionsModalBody">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading submissions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="detail-modal">
+        <div class="detail-container">
+            <div class="detail-header">
+                <h3><i class="fas fa-info-circle"></i> Submission Details</h3>
+                <button class="close-modal" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="detail-body" id="detailModalBody">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterForms() {
+        var searchInput = document.getElementById('searchInput');
+        var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        var cards = document.querySelectorAll('.form-card');
+
+        for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var title = card.dataset.title || '';
+        var matches = title.indexOf(searchTerm) !== -1;
+        card.style.display = matches ? '' : 'none';
+        }
+        }
+
+        function filterByStatus(element, status) {
+        var chips = document.querySelectorAll('.filter-chip');
+
+        for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.remove('active');
+        }
+
+        element.classList.add('active');
+
+        var cards = document.querySelectorAll('.form-card');
+
+        for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+
+        if (status === 'all') {
+        card.style.display = '';
+        } else {
+        var cardStatus = card.dataset.status;
+        card.style.display = cardStatus === status ? '' : 'none';
+        }
+        }
+        }
+
+        function deleteForm(formId, formTitle) {
+        if (confirm('⚠️ Are you sure you want to delete the form "' + formTitle + '"? This action cannot be undone.')) {
+        $.ajax({
+        url: '/Admin/DeleteForm/' + formId,
+        type: 'POST',
+        data: {
+        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        },
+        success: function(response) {
+        showToast('Form "' + formTitle + '" deleted successfully!', 'success');
+        setTimeout(function() {
+        location.reload();
+        }, 1500);
+        },
+        error: function(xhr) {
+        showToast('Failed to delete form. Please try again.', 'error');
+        }
+        });
+        }
+        }
+
+        function showSubmissions(formId, formTitle) {
+        $('#modalFormTitle').text(formTitle + ' - Submissions');
+        $('#submissionsModal').addClass('active');
+
+        $.ajax({
+        url: '/Admin/api/ViewSubmissions/' + formId,
+        type: 'GET',
+        success: function(response) {
+        if (response.success) {
+        renderSubmissions(response);
+        } else {
+        $('#submissionsModalBody').html('<div class="no-data"><i class="fas fa-exclamation-circle"></i><p>' + response.message + '</p></div>');
+        }
+        },
+        error: function() {
+        $('#submissionsModalBody').html('<div class="no-data"><i class="fas fa-exclamation-circle"></i><p>Failed to load submissions</p></div>');
+        }
+        });
+        }
+
+        function renderSubmissions(data) {
+        var submissions = data.submissions;
+
+        if (!submissions || submissions.length === 0) {
+        $('#submissionsModalBody').html('<div class="no-data"><i class="fas fa-inbox"></i><p>No submissions found for this form.</p></div>');
+        return;
+        }
+
+        var html = '<div class="submissions-stats">' +
+        '<div class="stat"><span class="count">' + submissions.length + '</span> <span class="label">Total Submissions</span></div>' +
+        '</div>' +
+        '<div style="overflow-x: auto;">' +
+        '<table class="submissions-table">' +
+        '<thead><tr>' +
+        '<th>#</th>' +
+        '<th>Submitted By</th>' +
+        '<th>Submitted At</th>' +
+        '<th>Action</th>' +
+        '</tr></thead><tbody>';
+
+        for (var i = 0; i < submissions.length; i++) {
+        var sub = submissions[i];
+        var submittedDate = new Date(sub.submittedAt).toLocaleString();
+
+        html += '<tr>' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td>' + escapeHtml(sub.submittedByName || 'Unknown') + '</td>' +
+        '<td>' + submittedDate + '</td>' +
+        '<td><button class="view-detail-btn" onclick="showSubmissionDetail(' + sub.submissionId + ', \'' + data.formTitle + '\')">View Details</button></td>' +
+        '</tr>';
+        }
+
+        html += '</tbody></table></div>';
+        $('#submissionsModalBody').html(html);
+        }
+
+        function showSubmissionDetail(submissionId, formTitle) {
+        closeSubmissionsModal();
+        $('#detailModal').addClass('active');
+
+        $.ajax({
+        url: '/Admin/api/SubmissionDetail/' + submissionId,
+        type: 'GET',
+        success: function(response) {
+        if (response.success) {
+        renderSubmissionDetail(response.data);
+        } else {
+        $('#detailModalBody').html('<div class="no-data"><i class="fas fa-exclamation-circle"></i><p>' + response.message + '</p></div>');
+        }
+        },
+        error: function() {
+        $('#detailModalBody').html('<div class="no-data"><i class="fas fa-exclamation-circle"></i><p>Failed to load submission details</p></div>');
+        }
+        });
+        }
+
+        function renderSubmissionDetail(data) {
+        var formData = data.formData;
+
+        var html = '<div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">' +
+        '<div style="font-size: 11px; color: #8a9db8;">Submitted By</div>' +
+        '<div style="font-size: 14px;">' + escapeHtml(data.submittedByName) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">' +
+        '<div style="font-size: 11px; color: #8a9db8;">Submitted At</div>' +
+        '<div style="font-size: 14px;">' + new Date(data.submittedAt).toLocaleString() + '</div>' +
+        '</div>';
+
+        for (var key in formData) {
+        if (formData.hasOwnProperty(key)) {
+        var value = formData[key];
+
+        if (typeof value === 'object') {
+        value = JSON.stringify(value);
+        }
+
+        html += '<div class="detail-field">' +
+        '<div class="field-name">' + escapeHtml(key.replace(/_/g, ' ')) + '</div>' +
+        '<div class="field-value">' + escapeHtml(String(value)) + '</div>' +
+        '</div>';
+        }
+        }
+
+        $('#detailModalBody').html(html);
+        }
+
+        function closeSubmissionsModal() {
+        $('#submissionsModal').removeClass('active');
+        $('#submissionsModalBody').html('<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading submissions...</p></div>');
+        }
+
+        function closeDetailModal() {
+        $('#detailModal').removeClass('active');
+        $('#detailModalBody').html('<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading details...</p></div>');
+        }
+
+        function showToast(message, type) {
+        var existingToast = document.querySelector('.toast-notification');
+
+        if (existingToast) existingToast.remove();
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-notification toast-' + type;
+        toast.innerHTML = '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle') + '"></i> ' + message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(function() {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(function() {
+        toast.remove();
+        }, 300);
+        }, 3000);
+        }
+
+        function escapeHtml(str) {
+        if (!str) return '';
+
+        return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+        });
+        }
+
+        $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+        closeSubmissionsModal();
+        closeDetailModal();
+        }
+        });
+
+        $('#submissionsModal').on('click', function(e) {
+        if (e.target === this) {
+        closeSubmissionsModal();
+        }
+        });
+
+        $('#detailModal').on('click', function(e) {
+        if (e.target === this) {
+        closeDetailModal();
+        }
+        });
+    </script>
+</body>
+</html>

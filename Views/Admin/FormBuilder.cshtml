@@ -1,0 +1,1165 @@
+﻿@{
+    ViewData["Title"] = ViewBag.IsEditMode == true ? "Edit Form" : "Create Form Builder";
+
+    var formAction = ViewBag.IsEditMode == true
+        ? $"/Admin/FormBuilder/Update/{ViewBag.FormId}"
+        : "/Admin/FormBuilder/Create";
+
+    var formTitle = ViewBag.IsEditMode == true ? "Edit Form" : "Create New Form";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@formTitle - Form Builder</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <style>
+            /* ── KSEB Cyberpunk CSS Variables ── */
+            :root {
+                --bg-deep: #060913;
+                --bg-card: #0d1527;
+                --bg-hover: #111e35;
+                --accent: #00c8ff;
+                --accent-dim: rgba(0,200,255,0.25);
+                --emerald: #00e5a0;
+                --crimson: #dc2626;
+                --border: rgba(0,200,255,0.15);
+                --border-mid: rgba(0,200,255,0.3);
+                --text-1: #e8f4ff;
+                --text-2: #8ba5c0;
+                --text-3: #445566;
+                --indigo: #6366f1;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            /* ===== BACKGROUND VIDEO STYLES ===== */
+            /* Video background container - positioned behind all content */
+            .bg-video-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -2; /* Behind everything */
+                overflow: hidden;
+            }
+
+                .bg-video-container video {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    min-width: 100%;
+                    min-height: 100%;
+                    width: auto;
+                    height: auto;
+                    transform: translate(-50%, -50%);
+                    object-fit: cover;
+                    filter: brightness(0.35) contrast(1.2) blur(2px);
+                    transition: filter 0.3s ease;
+                }
+
+            /* Optional: subtle overlay gradient to improve text readability */
+            .bg-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle at center, rgba(6,9,19,0.65) 0%, rgba(3,5,12,0.85) 100%);
+                z-index: -1;
+                pointer-events: none;
+            }
+
+            /* Ensure body background is transparent to see video */
+            body {
+                background: transparent !important;
+                color: var(--text-1) !important;
+                font-family: 'Inter', system-ui, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Fix for navbar - add margin-top to main container */
+            .form-builder-container {
+                margin-top: 5px;
+                height: calc(100vh - 70px);
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* ── Grid canvas background (semi-transparent so video shows through subtly) ── */
+            .canvas-grid {
+                background-color: rgba(6,9,19,0.4) !important;
+                background-image: linear-gradient(to right, rgba(0,200,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,200,255,0.06) 1px, transparent 1px) !important;
+                background-size: 24px 24px !important;
+                backdrop-filter: blur(0px);
+            }
+
+            /* ── Scrollbar hide ── */
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+
+            .hide-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
+            /* ── Header (slightly more transparent to blend with video) ── */
+            #header {
+                /* background: rgba(13,21,39,0.85) !important; */
+                background: background: rgba(18, 20, 30, 0.65) !important;
+                border-bottom: 1px solid var(--border-mid) !important;
+                backdrop-filter: blur(16px);
+                box-shadow: 0 1px 24px rgba(0,200,255,0.08) !important;
+                flex-shrink: 0;
+            }
+
+            /* ── Form title input ── */
+            #formTitleInput {
+                background: rgba(6,9,19,0.9) !important;
+                border: 1px solid var(--border-mid) !important;
+                color: var(--text-1) !important;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                transition: border-color 0.2s;
+                padding: 8px 12px;
+            }
+
+                #formTitleInput:focus {
+                    outline: none;
+                    border-color: var(--accent) !important;
+                    box-shadow: 0 0 0 3px rgba(0,200,255,0.1);
+                }
+
+            /* ── User Selector (replaces department) ── */
+            .user-selector {
+                background: rgba(13,21,39,0.85) !important;
+                backdrop-filter: blur(8px);
+                border: 1px solid var(--border-mid) !important;
+                border-radius: 10px;
+                padding: 6px 15px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+                .user-selector label {
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    color: var(--accent) !important;
+                    margin: 0;
+                }
+
+                .user-selector select {
+                    background: rgba(6,9,19,0.9) !important;
+                    border: 1px solid var(--border) !important;
+                    color: var(--text-1) !important;
+                    border-radius: 6px;
+                    padding: 6px 10px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    min-width: 200px;
+                }
+
+                    .user-selector select:focus {
+                        outline: none;
+                        border-color: var(--accent) !important;
+                    }
+
+                .user-selector .user-info {
+                    font-size: 10px;
+                    color: var(--text-2);
+                }
+
+            /* ── Header action buttons ── */
+            .btn-save {
+                background: linear-gradient(135deg, var(--emerald), #00b07a) !important;
+                color: #052b1e !important;
+                border: none !important;
+                font-weight: 700 !important;
+            }
+
+                .btn-save:hover {
+                    opacity: 0.88;
+                    transform: translateY(-1px);
+                }
+
+            .btn-clear {
+                background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+                color: white !important;
+                border: none !important;
+            }
+
+                .btn-clear:hover {
+                    opacity: 0.88;
+                }
+
+            .btn-group {
+                background: rgba(13,21,39,0.7) !important;
+                border: 1px solid var(--border) !important;
+                border-radius: 10px;
+                padding: 4px;
+            }
+
+            /* ── Left Sidebar (semi-transparent) ── */
+            #leftSidebar {
+                /* background: rgba(13,21,39,0.85) !important; */
+                background: rgba(18, 20, 30, -0.35) !important;
+                backdrop-filter: blur(12px);
+                border-right: 1px solid var(--border-mid) !important;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.4) !important;
+            }
+
+            .sidebar-header {
+                background: linear-gradient(135deg, rgba(0,200,255,0.2), rgba(99,102,241,0.2)) !important;
+                border-bottom: 1px solid var(--border-mid) !important;
+                padding: 14px 16px;
+            }
+
+                .sidebar-header h2 {
+                    color: var(--accent) !important;
+                    font-size: 12px;
+                }
+
+            /* ── Section labels ── */
+            .section-label {
+                color: var(--accent) !important;
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+
+            /* ── Component cards (toolbox items) ── */
+            .component-card {
+                background: rgba(6,9,19,0.8) !important;
+                backdrop-filter: blur(4px);
+                border: 1px solid var(--border) !important;
+                color: var(--text-2) !important;
+                border-radius: 10px !important;
+                transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+                cursor: grab;
+                padding: 10px 14px !important;
+            }
+
+                .component-card:hover {
+                    border-color: var(--accent) !important;
+                    background: rgba(17,30,53,0.9) !important;
+                    color: var(--text-1) !important;
+                    transform: translateX(4px) !important;
+                    box-shadow: 0 0 16px rgba(0,200,255,0.12) !important;
+                }
+
+                .component-card:active {
+                    cursor: grabbing;
+                    opacity: 0.6;
+                }
+
+                .component-card .icon-box {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
+            /* ── Instructions box ── */
+            .instructions-box {
+                background: rgba(0,200,255,0.08) !important;
+                backdrop-filter: blur(4px);
+                border: 1px solid var(--border) !important;
+                border-radius: 10px;
+            }
+
+                .instructions-box h4 {
+                    color: var(--accent) !important;
+                }
+
+            /* ── Canvas main area (transparent to show video) ── */
+            #canvas {
+                background: transparent !important;
+            }
+
+            /* ── Empty state message ── */
+            .empty-state-message {
+                text-align: center;
+                padding: 40px;
+                color: var(--text-3);
+                background: rgba(6,9,19,0.3);
+                border-radius: 20px;
+                backdrop-filter: blur(4px);
+            }
+
+                .empty-state-message i {
+                    font-size: 48px;
+                    margin-bottom: 16px;
+                    color: var(--accent-dim);
+                }
+
+            /* ── Drop zone ── */
+            .drop-zone {
+                border: 2px dashed var(--border-mid) !important;
+                border-radius: 12px;
+                min-height: 120px;
+                transition: all 0.25s;
+            }
+
+                .drop-zone.active {
+                    border-color: var(--accent) !important;
+                    background: rgba(0,200,255,0.08) !important;
+                }
+
+            /* ── Placed form fields (glassmorphism) ── */
+            .form-field {
+                background: rgba(13,21,39,0.85) !important;
+                backdrop-filter: blur(8px);
+                border: 1px solid var(--border) !important;
+                border-radius: 10px !important;
+                padding: 14px 16px !important;
+                position: relative;
+                transition: border-color 0.2s;
+            }
+
+                .form-field:hover {
+                    border-color: var(--accent-dim) !important;
+                }
+
+                .form-field .field-type-badge {
+                    font-size: 10px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    color: var(--accent);
+                }
+
+                .form-field input[type="text"],
+                .form-field input:not([type="hidden"]),
+                .form-field textarea,
+                .form-field select {
+                    background: rgba(6,9,19,0.85) !important;
+                    border: 1px solid var(--border) !important;
+                    color: var(--text-1) !important;
+                    border-radius: 6px !important;
+                    padding: 8px 12px;
+                }
+
+                    .form-field input:focus,
+                    .form-field textarea:focus {
+                        outline: none !important;
+                        border-color: var(--accent) !important;
+                    }
+
+                .form-field label {
+                    color: var(--text-2) !important;
+                    font-size: 11px;
+                    margin-bottom: 4px;
+                }
+
+            .field-settings-btn, .field-delete-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px !important;
+            }
+
+            .field-settings-btn {
+                background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.7)) !important;
+            }
+
+            .field-delete-btn {
+                background: linear-gradient(135deg, rgba(220,38,38,0.7), rgba(190,18,60,0.7)) !important;
+            }
+
+            .dragging {
+                opacity: 0.35;
+                transform: scale(0.97);
+            }
+
+            /* ── Field Settings Modal ── */
+            #fieldSettingsModal {
+                background: rgba(6,9,19,0.95) !important;
+                backdrop-filter: blur(12px);
+                z-index: 1000;
+            }
+
+                #fieldSettingsModal > div {
+                    background: var(--bg-card) !important;
+                    border: 1px solid var(--border-mid) !important;
+                    border-radius: 16px;
+                    padding: 24px;
+                }
+
+            #fieldTypeSelect, #fieldOptions {
+                background: var(--bg-deep) !important;
+                border: 1px solid var(--border-mid) !important;
+                color: var(--text-1) !important;
+                border-radius: 8px !important;
+                padding: 8px 12px;
+            }
+
+            #fieldSettingsSave {
+                background: linear-gradient(135deg, var(--accent), #0099cc) !important;
+                color: #052b2b !important;
+                font-weight: 700 !important;
+                padding: 8px 20px;
+                border-radius: 8px;
+            }
+
+            #fieldSettingsCancel {
+                background: var(--bg-deep) !important;
+                border: 1px solid var(--border-mid) !important;
+                color: var(--text-2) !important;
+                padding: 8px 20px;
+                border-radius: 8px;
+            }
+
+            /* ── Success / Error toasts ── */
+            .success-message, .error-message {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease-out;
+                padding: 12px 24px;
+                border-radius: 10px;
+                font-size: 14px;
+            }
+
+            .success-message {
+                background: linear-gradient(135deg, #00e5a0, #00b07a) !important;
+                color: #052b1e !important;
+            }
+
+            .error-message {
+                background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+                color: white !important;
+            }
+
+            @@keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @@keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .fade-in-up {
+                animation: fadeInUp 0.25s ease-out;
+            }
+
+            /* Loading spinner */
+            .loading-users {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2px solid var(--border);
+                border-top-color: var(--accent);
+                border-radius: 50%;
+                animation: spin 0.6s linear infinite;
+            }
+            @@keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== BACKGROUND VIDEO INSERTED HERE ===== -->
+    <!-- Video container behind all content -->
+    <div class="bg-video-container">
+        <video autoplay loop muted playsinline>
+            <source src="~/assets/bg-1.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    <div class="bg-overlay"></div>
+    <!-- ===== END BACKGROUND VIDEO ===== -->
+
+    <div class="page-enter">
+        <main class="main">
+            <div class="form-builder-container">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="success-message flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i> @TempData["SuccessMessage"]
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="error-message flex items-center gap-2">
+                        <i class="fa-solid fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    </div>
+                }
+
+                <!-- HEADER with User Dropdown -->
+                <header id="header" class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 z-20">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <input id="formTitleInput"
+                                   type="text"
+                                   value="@(Model?.FormTitle ?? "New Form")"
+                                   class="px-3 py-1.5 text-sm"
+                                   style="background: var(--bg-deep); border: 1px solid var(--border-mid); color: var(--text-1); border-radius: 8px; width: 220px;"
+                                   placeholder="Form Title"
+                                   required />
+                        </div>
+
+                        <!-- USER DROPDOWN - Replaces Department -->
+                        <div class="user-selector">
+                            <label><i class="fa-solid fa-user"></i> ASSIGN TO USER *</label>
+                            <select id="userSelect" name="UserId" required>
+                                <option value="">-- Select User --</option>
+                                @if (ViewBag.Users != null)
+                                {
+                                    foreach (var user in ViewBag.Users)
+                                    {
+                                        if (Model?.UserId == user.UserId)
+                                        {
+                                            <option value="@user.UserId" selected>
+                                                @user.FullName
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@user.UserId">
+                                                @user.FullName
+                                            </option>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="" disabled>Loading users...</option>
+                                }
+                            </select>
+                            <div class="user-info">
+                                <i class="fa-solid fa-info-circle"></i> Form will be assigned to this user
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1 btn-group">
+                            <button type="submit" form="mainForm" class="btn-save flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                <i class="fa-solid fa-floppy-disk"></i> <span>Save Form</span>
+                            </button>
+                            <button type="button" id="clearFormBtn" class="btn-clear flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                <i class="fa-solid fa-trash"></i> <span>Clear</span>
+                            </button>
+                            <!-- REMOVED: My Forms button -->
+                        </div>
+                    </div>
+                </header>
+
+                <!-- BODY -->
+                <div class="flex flex-1 overflow-hidden min-w-0">
+
+                    <!-- LEFT SIDEBAR -->
+                    <aside id="leftSidebar" class="w-64 flex-shrink-0 flex flex-col transition-all duration-200 ease-in-out">
+                        <div class="sidebar-header flex items-center justify-between">
+                            <h2 class="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-puzzle-piece"></i> Form Fields
+                            </h2>
+                            <button id="collapseSidebarBtn" class="p-1.5 rounded-lg transition-all" title="Collapse Sidebar">
+                                <i class="fa-solid fa-bars"></i>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto hide-scrollbar p-3 space-y-4">
+                            <!-- Basic Fields -->
+                            <div>
+                                <p class="mb-2 text-xs font-bold uppercase section-label flex items-center gap-1">
+                                    <i class="fa-solid fa-keyboard"></i> Basic Fields
+                                </p>
+                                <div class="space-y-2">
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="text" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#3b82f6,#6366f1)"><i class="fa-solid fa-font text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Text Field</span><span class="text-xs">Single line text input</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="textarea" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)"><i class="fa-solid fa-align-left text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Text Area</span><span class="text-xs">Multi-line text input</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="email" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><i class="fa-solid fa-envelope text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Email Field</span><span class="text-xs">Email address input</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Specialized Fields -->
+                            <div>
+                                <p class="mb-2 text-xs font-bold uppercase section-label flex items-center gap-1">
+                                    <i class="fa-solid fa-sliders"></i> Specialized Fields
+                                </p>
+                                <div class="space-y-2">
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="number" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#0d9488)"><i class="fa-solid fa-hashtag text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Number Field</span><span class="text-xs">Numeric input</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="date" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#f43f5e,#ec4899)"><i class="fa-solid fa-calendar text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Date Field</span><span class="text-xs">Date picker</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="select" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)"><i class="fa-solid fa-caret-down text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Dropdown</span><span class="text-xs">Select from options</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Media & Location Fields -->
+                            <div>
+                                <p class="mb-2 text-xs font-bold uppercase section-label flex items-center gap-1">
+                                    <i class="fa-solid fa-camera"></i> Media & Location
+                                </p>
+                                <div class="space-y-2">
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="picture" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#e91e63,#f06292)"><i class="fa-solid fa-camera text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Picture Upload</span><span class="text-xs">Upload or capture image</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="voice" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#9c27b0,#ce93d8)"><i class="fa-solid fa-microphone text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Voice Record</span><span class="text-xs">Record Audio</span></div>
+                                    </div>
+                                    <!-- Video Record -->
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="video" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#ff6b35,#f7931e)"><i class="fa-solid fa-video text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Video Record</span><span class="text-xs">Record video</span></div>
+                                    </div>
+                                    <div class="component-card flex items-center gap-3 draggable-field" data-field-type="location" draggable="true">
+                                        <div class="icon-box" style="background:linear-gradient(135deg,#4caf50,#81c784)"><i class="fa-solid fa-location-dot text-sm"></i></div>
+                                        <div><span class="font-semibold text-sm block">Current Location</span><span class="text-xs">GPS coordinates</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="instructions-box p-4 mt-4">
+                                <h4 class="text-xs font-bold uppercase mb-2 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> Instructions</h4>
+                                <p class="text-xs">Drag fields to the canvas to build your form. Click on fields to edit properties.</p>
+                                <p class="text-xs mt-2"><i class="fa-solid fa-user-check"></i> Form will be assigned to selected user</p>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <button id="expandSidebarBtn" class="hidden items-center justify-center w-8 border-r transition-all" title="Expand Sidebar">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <!-- CANVAS -->
+                    <main class="flex-1 min-w-0 overflow-auto hide-scrollbar">
+                        <form id="mainForm" method="post" action="@formAction" class="h-full">
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="FormTitle" id="hiddenFormTitle" value="@Model?.FormTitle" />
+                            <input type="hidden" name="FormDescription" id="hiddenFormDescription" value="@Model?.FormDescription" />
+                            <input type="hidden" name="CreatedBy" value="@(User.Identity?.Name ?? "MVC-User")" />
+                            <input type="hidden" name="UserId" id="hiddenUserId" value="@Model?.UserId" />
+
+                            @if (ViewBag.IsEditMode == true)
+                            {
+                                <input type="hidden" name="FormId" value="@ViewBag.FormId" />
+                            }
+
+                            <div id="canvas" class="relative h-full min-h-[calc(100vh-64px)] p-8 canvas-grid transition-colors duration-200">
+
+                                <!-- Empty State Message (only shown when no fields) -->
+                                <div id="canvasEmptyState" class="empty-state-message" style="@(Model?.Fields != null && Model.Fields.Count > 0 ? "display: none;" : "")">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <h3 class="text-lg font-semibold mt-2">Drag & Drop Fields Here</h3>
+                                    <p class="text-sm mt-1">Drag form fields from the left panel to start building your form</p>
+                                </div>
+
+                                <!-- Form Canvas Drop Zone -->
+                                <div id="formCanvas" class="relative max-w-3xl mx-auto flex flex-col gap-4 drop-zone">
+                                    @if (Model?.Fields != null && Model.Fields.Count > 0)
+                                    {
+                                        for (int i = 0; i < Model.Fields.Count; i++)
+                                        {
+                                            <div class="form-field fade-in-up" data-index="@i" data-field-type="@Model.Fields[i].FieldType">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <span class="field-type-badge flex items-center gap-2">
+                                                        <i class="fa-solid fa-cube"></i> @Model.Fields[i].FieldType Field
+                                                    </span>
+                                                    <div class="flex items-center gap-2">
+                                                        <button type="button" class="field-settings-btn text-white text-xs flex items-center justify-center transition-all" title="Edit Field">
+                                                            <i class="fa-solid fa-gear"></i>
+                                                        </button>
+                                                        <button type="button" class="field-delete-btn text-white text-xs flex items-center justify-center transition-all" title="Delete Field">
+                                                            <i class="fa-solid fa-xmark"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <div>
+                                                        <label class="block text-xs font-medium mb-1">Field Label</label>
+                                                        <input type="text" name="Fields[@i].FieldName" value="@Model.Fields[i].FieldName"
+                                                               class="field-label w-full px-3 py-2 rounded-lg" required />
+                                                    </div>
+                                                    @if (Model.Fields[i].FieldType == "textarea")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Field Value</label>
+                                                            <textarea class="w-full px-3 py-2 rounded-lg" rows="3" disabled></textarea>
+                                                        </div>
+                                                    }
+                                                    else if (Model.Fields[i].FieldType == "select")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Options (comma separated)</label>
+                                                            <input type="text" name="Fields[@i].Options" value="@Model.Fields[i].Options"
+                                                                   class="field-options w-full px-3 py-2 rounded-lg" />
+                                                        </div>
+                                                    }
+                                                    else if (Model.Fields[i].FieldType == "picture")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Picture Upload Preview</label>
+                                                            <div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);">
+                                                                <i class="fa-solid fa-camera text-2xl mb-2" style="color: var(--text-3);"></i>
+                                                                <p class="text-xs" style="color: var(--text-2);">Image will be uploaded here</p>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else if (Model.Fields[i].FieldType == "voice")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Voice Recording Preview</label>
+                                                            <div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);">
+                                                                <i class="fa-solid fa-microphone text-2xl mb-2" style="color: var(--text-3);"></i>
+                                                                <p class="text-xs" style="color: var(--text-2);">Audio will be recorded here</p>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else if (Model.Fields[i].FieldType == "video")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Video Recording Preview</label>
+                                                            <div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);">
+                                                                <i class="fa-solid fa-video text-2xl mb-2" style="color: var(--text-3);"></i>
+                                                                <p class="text-xs" style="color: var(--text-2);">Video will be recorded here</p>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else if (Model.Fields[i].FieldType == "location")
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Location Preview</label>
+                                                            <div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);">
+                                                                <i class="fa-solid fa-location-dot text-2xl mb-2" style="color: var(--text-3);"></i>
+                                                                <p class="text-xs" style="color: var(--text-2);">GPS coordinates will be captured</p>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div>
+                                                            <label class="block text-xs font-medium mb-1">Field Preview</label>
+                                                            <input type="@Model.Fields[i].FieldType" class="w-full px-3 py-2 rounded-lg" disabled />
+                                                        </div>
+                                                    }
+                                                    <input type="hidden" name="Fields[@i].FieldType" value="@Model.Fields[i].FieldType" />
+                                                    <input type="hidden" name="Fields[@i].FieldOrder" value="@i" class="field-order" />
+                                                    <input type="hidden" name="Fields[@i].IsRequired" value="false" />
+                                                    <input type="hidden" name="Fields[@i].Placeholder" value="" />
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </form>
+                    </main>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Field Settings Modal -->
+    <div id="fieldSettingsModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="w-full max-w-md">
+            <h2 class="text-xl font-bold mb-5 flex items-center gap-2">
+                <i class="fa-solid fa-gear" style="color:var(--accent)"></i> Field Settings
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-2">Field Type</label>
+                    <select id="fieldTypeSelect" class="w-full px-3 py-2">
+                        <option value="text">Text Field</option>
+                        <option value="textarea">Text Area</option>
+                        <option value="email">Email Field</option>
+                        <option value="number">Number Field</option>
+                        <option value="date">Date Field</option>
+                        <option value="select">Dropdown</option>
+                        <option value="picture">Picture Upload</option>
+                        <option value="voice">Voice Record</option>
+                        <option value="video">Video Record</option>
+                        <option value="location">Current Location</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-2">Required Field</label>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="fieldRequired"> <span class="text-sm">This field is required</span>
+                    </div>
+                </div>
+                <div id="optionsContainer" class="hidden">
+                    <label class="block text-xs font-semibold mb-2">Dropdown Options</label>
+                    <textarea id="fieldOptions" rows="3" class="w-full px-3 py-2"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+                <button id="fieldSettingsCancel" type="button" class="px-4 py-2 transition-colors">Cancel</button>
+                <button id="fieldSettingsSave" type="button" class="px-4 py-2 transition-colors">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM ELEMENTS
+        const body = document.getElementById("body");
+        const canvas = document.getElementById("canvas");
+        const formCanvas = document.getElementById("formCanvas");
+        const canvasEmptyState = document.getElementById("canvasEmptyState");
+        const themeToggle = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+        const collapseSidebarBtn = document.getElementById("collapseSidebarBtn");
+        const expandSidebarBtn = document.getElementById("expandSidebarBtn");
+        const leftSidebar = document.getElementById("leftSidebar");
+        const clearFormBtn = document.getElementById("clearFormBtn");
+        const formTitleInput = document.getElementById("formTitleInput");
+        const hiddenFormTitle = document.getElementById("hiddenFormTitle");
+        const mainForm = document.getElementById("mainForm");
+        const fieldSettingsModal = document.getElementById("fieldSettingsModal");
+        const fieldTypeSelect = document.getElementById("fieldTypeSelect");
+        const fieldRequired = document.getElementById("fieldRequired");
+        const optionsContainer = document.getElementById("optionsContainer");
+        const fieldOptions = document.getElementById("fieldOptions");
+        const fieldSettingsCancel = document.getElementById("fieldSettingsCancel");
+        const fieldSettingsSave = document.getElementById("fieldSettingsSave");
+        const userSelect = document.getElementById("userSelect");
+        const hiddenUserId = document.getElementById("hiddenUserId");
+
+        let isLightTheme = false;
+        let editingField = null;
+
+        // Theme
+        function toggleTheme() {
+            isLightTheme = !isLightTheme;
+            if (isLightTheme) {
+                document.documentElement.style.setProperty('--bg-deep', '#f8fafc');
+                document.documentElement.style.setProperty('--bg-card', '#ffffff');
+                document.documentElement.style.setProperty('--bg-hover', '#f1f5f9');
+                document.documentElement.style.setProperty('--text-1', '#0f172a');
+                document.documentElement.style.setProperty('--text-2', '#334155');
+                document.documentElement.style.setProperty('--text-3', '#64748b');
+                if (themeIcon) themeIcon.className = "fa-solid fa-moon";
+            } else {
+                document.documentElement.style.setProperty('--bg-deep', '#060913');
+                document.documentElement.style.setProperty('--bg-card', '#0d1527');
+                document.documentElement.style.setProperty('--bg-hover', '#111e35');
+                document.documentElement.style.setProperty('--text-1', '#e8f4ff');
+                document.documentElement.style.setProperty('--text-2', '#8ba5c0');
+                document.documentElement.style.setProperty('--text-3', '#445566');
+                if (themeIcon) themeIcon.className = "fa-solid fa-sun";
+            }
+        }
+
+        // Create field element
+        function createFieldElement(fieldType, fieldName = '', index = null) {
+            if (index === null) index = document.querySelectorAll('.form-field').length;
+            const fieldElement = document.createElement('div');
+            fieldElement.className = 'form-field fade-in-up';
+            fieldElement.dataset.index = index;
+            fieldElement.dataset.fieldType = fieldType;
+
+            let fieldContent = '';
+            
+            if (fieldType === 'textarea') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Text Area'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Field Value</label><textarea class="w-full px-3 py-2 rounded-lg" rows="3" disabled></textarea></div></div>`;
+            } else if (fieldType === 'select') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Dropdown'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Options (comma separated)</label><input type="text" name="Fields[${index}].Options" class="field-options w-full px-3 py-2 rounded-lg" placeholder="Option 1, Option 2, Option 3" /></div></div>`;
+            } else if (fieldType === 'picture') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Picture Upload'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Picture Upload Preview</label><div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);"><i class="fa-solid fa-camera text-2xl mb-2" style="color: var(--text-3);"></i><p class="text-xs" style="color: var(--text-2);">Image will be uploaded here</p></div></div></div>`;
+            } else if (fieldType === 'voice') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Voice Recording'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Voice Recording Preview</label><div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);"><i class="fa-solid fa-microphone text-2xl mb-2" style="color: var(--text-3);"></i><p class="text-xs" style="color: var(--text-2);">Audio will be recorded here</p></div></div></div>`;
+            } else if (fieldType === 'video') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Video Recording'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Video Recording Preview</label><div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);"><i class="fa-solid fa-video text-2xl mb-2" style="color: var(--text-3);"></i><p class="text-xs" style="color: var(--text-2);">Video will be recorded here</p></div></div></div>`;
+            } else if (fieldType === 'location') {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || 'Current Location'}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Location Preview</label><div class="border-2 border-dashed rounded-lg p-4 text-center" style="border-color: var(--border);"><i class="fa-solid fa-location-dot text-2xl mb-2" style="color: var(--text-3);"></i><p class="text-xs" style="color: var(--text-2);">GPS coordinates will be captured</p></div></div></div>`;
+            } else {
+                fieldContent = `<div class="space-y-3"><div><label class="block text-xs font-medium mb-1">Field Label</label><input type="text" name="Fields[${index}].FieldName" value="${fieldName || fieldType.charAt(0).toUpperCase() + fieldType.slice(1)}" class="field-label w-full px-3 py-2 rounded-lg" required /></div><div><label class="block text-xs font-medium mb-1">Field Preview</label><input type="${fieldType}" class="w-full px-3 py-2 rounded-lg" disabled placeholder="${fieldType} input" /></div></div>`;
+            }
+
+            fieldElement.innerHTML = `<div class="flex items-center justify-between mb-3"><span class="field-type-badge flex items-center gap-2"><i class="fa-solid fa-cube"></i> ${fieldType} Field</span><div class="flex items-center gap-2"><button type="button" class="field-settings-btn w-7 h-7 rounded-md text-white text-xs flex items-center justify-center transition-all"><i class="fa-solid fa-gear"></i></button><button type="button" class="field-delete-btn w-7 h-7 rounded-md text-white text-xs flex items-center justify-center transition-all"><i class="fa-solid fa-xmark"></i></button></div></div>${fieldContent}<input type="hidden" name="Fields[${index}].FieldType" value="${fieldType}" /><input type="hidden" name="Fields[${index}].FieldOrder" value="${index}" class="field-order" /><input type="hidden" name="Fields[${index}].IsRequired" value="false" /><input type="hidden" name="Fields[${index}].Placeholder" value="" /><input type="hidden" name="Fields[${index}].Options" value="" />`;
+            return fieldElement;
+        }
+
+        function addFieldToCanvas(fieldType) {
+            const fieldElement = createFieldElement(fieldType);
+            if (formCanvas) {
+                formCanvas.appendChild(fieldElement);
+                updateFieldIndexes();
+                updateEmptyState();
+                attachFieldEvents(fieldElement);
+                fieldElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function updateFieldIndexes() {
+            if (!formCanvas) return;
+            formCanvas.querySelectorAll('.form-field').forEach((field, index) => {
+                field.dataset.index = index;
+                field.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.name) input.name = input.name.replace(/Fields\[\d+\]/, `Fields[${index}]`);
+                });
+                const orderInput = field.querySelector('.field-order');
+                if (orderInput) orderInput.value = index;
+            });
+        }
+
+        function updateEmptyState() {
+            if (!canvasEmptyState || !formCanvas) return;
+            const hasFields = formCanvas.querySelectorAll('.form-field').length > 0;
+            canvasEmptyState.style.display = hasFields ? 'none' : 'block';
+        }
+
+        function clearForm() {
+            if (!confirm('Are you sure you want to clear all form fields?')) return;
+            if (formCanvas) { formCanvas.innerHTML = ''; updateEmptyState(); }
+        }
+
+        function openFieldSettings(fieldElement) {
+            editingField = fieldElement;
+            const fieldType = fieldElement.dataset.fieldType;
+            const fieldOptionsInput = fieldElement.querySelector('.field-options');
+            if (fieldTypeSelect) fieldTypeSelect.value = fieldType;
+            if (fieldOptions) fieldOptions.value = fieldOptionsInput ? fieldOptionsInput.value : '';
+            if (optionsContainer) optionsContainer.classList.toggle('hidden', fieldType !== 'select');
+            if (fieldSettingsModal) fieldSettingsModal.classList.remove('hidden');
+        }
+
+        function saveFieldSettings() {
+            if (!editingField) return;
+            const newType = fieldTypeSelect ? fieldTypeSelect.value : 'text';
+            const optionsValue = fieldOptions ? fieldOptions.value : '';
+            const isRequired = fieldRequired ? fieldRequired.checked : false;
+            
+            editingField.dataset.fieldType = newType;
+            const typeInput = editingField.querySelector('input[type="hidden"][name$="FieldType"]');
+            if (typeInput) typeInput.value = newType;
+            
+            const requiredInput = editingField.querySelector('input[name$="IsRequired"]');
+            if (requiredInput) requiredInput.value = isRequired;
+            
+            if (newType === 'select') {
+                const optionsInput = editingField.querySelector('.field-options');
+                if (optionsInput) optionsInput.value = optionsValue;
+            }
+            
+            // Update the badge text
+            const badgeSpan = editingField.querySelector('.field-type-badge');
+            if (badgeSpan) {
+                badgeSpan.innerHTML = `<i class="fa-solid fa-cube"></i> ${newType} Field`;
+            }
+            
+            if (fieldSettingsModal) fieldSettingsModal.classList.add('hidden');
+            editingField = null;
+        }
+
+        function validateForm() {
+            if (hiddenFormTitle && formTitleInput) hiddenFormTitle.value = formTitleInput.value;
+            if (formTitleInput && !formTitleInput.value.trim()) {
+                alert('Form title is required!'); formTitleInput.focus(); return false;
+            }
+            // Validate User instead of Department
+            if (userSelect && !userSelect.value) {
+                alert('Please select a user to assign this form!'); userSelect.focus(); return false;
+            }
+            if (hiddenUserId) hiddenUserId.value = userSelect.value;
+            
+            const fieldLabels = document.querySelectorAll('.field-label');
+            for (let label of fieldLabels) {
+                if (!label.value.trim()) { alert('All field labels are required!'); label.focus(); return false; }
+            }
+            return true;
+        }
+
+        // Drag and Drop
+        function initializeDragAndDrop() {
+            document.querySelectorAll('.draggable-field').forEach(field => {
+                field.addEventListener('dragstart', function(e) {
+                    this.classList.add('dragging');
+                    if (e.dataTransfer) {
+                        e.dataTransfer.setData('text/plain', this.dataset.fieldType);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    }
+                });
+                field.addEventListener('dragend', function() { this.classList.remove('dragging'); });
+            });
+            
+            if (formCanvas) {
+                formCanvas.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('active'); });
+                formCanvas.addEventListener('dragleave', function() { this.classList.remove('active'); });
+                formCanvas.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('active');
+                    const fieldType = e.dataTransfer ? e.dataTransfer.getData('text/plain') : null;
+                    if (fieldType) addFieldToCanvas(fieldType);
+                });
+                makeFieldsSortable();
+            }
+        }
+
+        function makeFieldsSortable() {
+            if (!formCanvas) return;
+            let draggedItem = null;
+            
+            function updateDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.form-field:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                    return closest;
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+            
+            formCanvas.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const afterElement = updateDragAfterElement(formCanvas, e.clientY);
+                if (draggedItem) {
+                    afterElement ? formCanvas.insertBefore(draggedItem, afterElement) : formCanvas.appendChild(draggedItem);
+                }
+            });
+            
+            function refreshDraggable() {
+                formCanvas.querySelectorAll('.form-field').forEach(field => {
+                    field.setAttribute('draggable', 'true');
+                    field.removeEventListener('dragstart', dragStartHandler);
+                    field.removeEventListener('dragend', dragEndHandler);
+                    field.addEventListener('dragstart', dragStartHandler);
+                    field.addEventListener('dragend', dragEndHandler);
+                });
+            }
+            
+            function dragStartHandler(e) {
+                draggedItem = this;
+                this.classList.add('dragging');
+                setTimeout(() => this.style.display = 'none', 0);
+            }
+            function dragEndHandler() {
+                this.classList.remove('dragging');
+                this.style.display = '';
+                draggedItem = null;
+                updateFieldIndexes();
+            }
+            
+            refreshDraggable();
+        }
+
+        function attachFieldEvents(fieldElement) {
+            const settingsBtn = fieldElement.querySelector('.field-settings-btn');
+            if (settingsBtn) settingsBtn.addEventListener('click', () => openFieldSettings(fieldElement));
+            const deleteBtn = fieldElement.querySelector('.field-delete-btn');
+            if (deleteBtn) deleteBtn.addEventListener('click', () => {
+                if (confirm('Delete this field?')) {
+                    fieldElement.remove(); updateFieldIndexes(); updateEmptyState();
+                }
+            });
+        }
+
+        function attachExistingFieldEvents() {
+            document.querySelectorAll('.form-field').forEach(field => attachFieldEvents(field));
+        }
+
+        // Event Listeners
+        function attachEventListeners() {
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (collapseSidebarBtn) collapseSidebarBtn.addEventListener('click', () => {
+                leftSidebar?.classList.add('hidden');
+                expandSidebarBtn?.classList.remove('hidden');
+                expandSidebarBtn?.classList.add('flex');
+            });
+            if (expandSidebarBtn) expandSidebarBtn.addEventListener('click', () => {
+                leftSidebar?.classList.remove('hidden');
+                expandSidebarBtn.classList.add('hidden');
+                expandSidebarBtn.classList.remove('flex');
+            });
+            if (clearFormBtn) clearFormBtn.addEventListener('click', clearForm);
+            if (formTitleInput) formTitleInput.addEventListener('input', () => {
+                if (hiddenFormTitle) hiddenFormTitle.value = formTitleInput.value;
+            });
+            // User select change handler
+            if (userSelect) {
+                userSelect.addEventListener('change', function() {
+                    if (hiddenUserId) hiddenUserId.value = this.value;
+                });
+            }
+            if (fieldTypeSelect) fieldTypeSelect.addEventListener('change', function() {
+                if (optionsContainer) optionsContainer.classList.toggle('hidden', this.value !== 'select');
+            });
+            if (fieldSettingsCancel) fieldSettingsCancel.addEventListener('click', () => {
+                if (fieldSettingsModal) fieldSettingsModal.classList.add('hidden');
+                editingField = null;
+            });
+            if (fieldSettingsSave) fieldSettingsSave.addEventListener('click', saveFieldSettings);
+            if (fieldSettingsModal) fieldSettingsModal.addEventListener('click', function(e) {
+                if (e.target === fieldSettingsModal) { fieldSettingsModal.classList.add('hidden'); editingField = null; }
+            });
+            if (mainForm) mainForm.addEventListener('submit', function(e) {
+                if (!validateForm()) { e.preventDefault(); return false; }
+                return true;
+            });
+        }
+
+        // Initialize
+        function initialize() {
+            initializeDragAndDrop();
+            attachExistingFieldEvents();
+            updateEmptyState();
+            attachEventListeners();
+            
+            // Set initial user value
+            if (userSelect && hiddenUserId && userSelect.value) {
+                hiddenUserId.value = userSelect.value;
+            }
+            
+            setTimeout(() => {
+                document.querySelectorAll('.success-message, .error-message').forEach(el => {
+                    el.style.transition = 'opacity 0.5s';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 500);
+                });
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>

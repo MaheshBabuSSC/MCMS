@@ -1,0 +1,1094 @@
+﻿@{
+    ViewData["Title"] = Model.FormTitle;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Model.FormTitle - EAM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #060913;
+            --bg-card: #0d1527;
+            --bg-hover: #15223c;
+            --border: rgba(30, 45, 69, 0.7);
+            --accent: #00c8ff;
+            --emerald: #00e09e;
+            --crimson: #ff4757;
+            --text-1: #e8eef5;
+            --text-2: #8a9db8;
+            --text-3: #4a6080;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-1); min-height: 100vh; }
+        .form-container { max-width: 800px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1; }
+        .form-header { text-align: center; margin-bottom: 32px; }
+        .form-title { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, var(--accent), #9b59ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+        .form-description { color: var(--text-2); font-size: 14px; line-height: 1.6; }
+
+            .form-card {
+                background: transparent !important;
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                padding: 32px;
+                /* backdrop-filter: blur(10px); */
+            }
+
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-label .required { color: var(--crimson); margin-left: 4px; }
+        .form-control { width: 100%; padding: 12px 16px; background: rgba(6, 9, 19, 0.6); border: 1px solid var(--border); border-radius: 12px; color: var(--text-1); font-size: 14px; font-family: inherit; transition: all 0.3s ease; }
+        .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,200,255,0.1); }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+        select.form-control { cursor: pointer; }
+        
+        .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(6, 9, 19, 0.4); }
+        .upload-area:hover { border-color: var(--accent); background: rgba(0,200,255,0.05); }
+        .preview-container { margin-top: 15px; display: none; }
+        .preview-container img { max-width: 100%; max-height: 200px; border-radius: 8px; }
+        .preview-container audio { width: 100%; border-radius: 8px; }
+        .preview-container video { width: 100%; border-radius: 8px; max-height: 300px; }
+        .remove-file { margin-top: 10px; background: var(--crimson); color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        
+        .location-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: rgba(6, 9, 19, 0.4); }
+        .location-info { margin-top: 15px; display: none; padding: 12px; background: rgba(0,200,255,0.1); border-radius: 8px; }
+        .location-details { font-size: 12px; color: var(--text-2); word-break: break-word; }
+        
+        .btn-icon { background: var(--accent); color: var(--bg-deep); padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-icon-danger { background: var(--crimson); color: white; }
+        .form-actions { display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .btn { padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #0099cc); color: var(--bg-deep); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,200,255,0.3); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .toast-message { position: fixed; top: 90px; right: 20px; padding: 12px 20px; border-radius: 10px; z-index: 1000; animation: slideIn 0.3s ease-out; }
+        .toast-success { background: linear-gradient(135deg, var(--emerald), #00b07a); color: #052b1e; }
+        .toast-error { background: linear-gradient(135deg, var(--crimson), #991b1b); color: white; }
+        @@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+            /* Background Video Styles */
+            .bg-video-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -2;
+                overflow: hidden;
+            }
+
+                .bg-video-container video {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    min-width: 100%;
+                    min-height: 100%;
+                    width: auto;
+                    height: auto;
+                    transform: translate(-50%, -50%);
+                    object-fit: cover;
+                    filter: brightness(0.35) contrast(1.2) blur(2px);
+                }
+
+            .bg-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle at center, rgba(6,9,19,0.65) 0%, rgba(3,5,12,0.85) 100%);
+                z-index: -1;
+                pointer-events: none;
+            }
+
+            body {
+                background: transparent !important;
+            }
+
+            .form-container {
+                position: relative;
+                z-index: 1;
+            }
+
+            .form-card {
+                backdrop-filter: blur(10px);
+                /* background: rgba(13,21,39,0.85) !important; */
+            }
+
+            .upload-area, .location-area {
+                background: rgba(6, 9, 19, 0.6) !important;
+            }
+
+            /* ========== PAGE ENTRY ANIMATIONS ========== */
+            @@keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @@keyframes fadeInScale {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            @@keyframes slideInLeft {
+                from {
+                    opacity: 0;
+                    transform: translateX(-40px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            @@keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(40px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            @@keyframes glowPulse {
+                0%, 100% {
+                    box-shadow: 0 0 0 0 rgba(0, 200, 255, 0.4);
+                }
+
+                50% {
+                    box-shadow: 0 0 0 8px rgba(0, 200, 255, 0);
+                }
+            }
+
+            @@keyframes shimmer {
+                0% {
+                    background-position: -200% 0;
+                }
+
+                100% {
+                    background-position: 200% 0;
+                }
+            }
+
+            @@keyframes float {
+                0%, 100% {
+                    transform: translateY(0px);
+                }
+
+                50% {
+                    transform: translateY(-5px);
+                }
+            }
+
+            /* Apply animations to elements */
+            .form-container {
+                animation: fadeInUp 0.6s ease-out;
+            }
+
+            .form-header {
+                animation: fadeInScale 0.5s ease-out;
+            }
+
+            .form-card {
+                animation: fadeInUp 0.7s ease-out 0.1s both;
+            }
+
+            .form-group {
+                animation: slideInLeft 0.5s ease-out;
+                animation-fill-mode: both;
+            }
+
+                /* Staggered animation for form groups */
+                .form-group:nth-child(1) {
+                    animation-delay: 0.05s;
+                }
+
+                .form-group:nth-child(2) {
+                    animation-delay: 0.1s;
+                }
+
+                .form-group:nth-child(3) {
+                    animation-delay: 0.15s;
+                }
+
+                .form-group:nth-child(4) {
+                    animation-delay: 0.2s;
+                }
+
+                .form-group:nth-child(5) {
+                    animation-delay: 0.25s;
+                }
+
+                .form-group:nth-child(6) {
+                    animation-delay: 0.3s;
+                }
+
+                .form-group:nth-child(7) {
+                    animation-delay: 0.35s;
+                }
+
+                .form-group:nth-child(8) {
+                    animation-delay: 0.4s;
+                }
+
+                .form-group:nth-child(9) {
+                    animation-delay: 0.45s;
+                }
+
+                .form-group:nth-child(10) {
+                    animation-delay: 0.5s;
+                }
+
+                .form-group:nth-child(11) {
+                    animation-delay: 0.55s;
+                }
+
+                .form-group:nth-child(12) {
+                    animation-delay: 0.6s;
+                }
+
+            .form-actions {
+                animation: slideInRight 0.5s ease-out 0.3s both;
+            }
+
+            /* Hover animations */
+            .form-control {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+                .form-control:hover {
+                    transform: translateX(4px);
+                    border-color: var(--accent);
+                }
+
+            .btn {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+            }
+
+                .btn::before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: translate(-50%, -50%);
+                    transition: width 0.6s, height 0.6s;
+                }
+
+                .btn:active::before {
+                    width: 300px;
+                    height: 300px;
+                }
+
+            .btn-primary {
+                animation: glowPulse 2s infinite;
+            }
+
+                .btn-primary:hover {
+                    transform: translateY(-2px) scale(1.02);
+                }
+
+            .btn-secondary:hover {
+                transform: translateX(4px);
+            }
+
+            /* Upload area animations */
+            .upload-area {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+                .upload-area:hover {
+                    transform: scale(1.01);
+                    border-color: var(--accent);
+                }
+
+                .upload-area i {
+                    transition: all 0.3s ease;
+                }
+
+                .upload-area:hover i {
+                    transform: scale(1.1);
+                    color: var(--accent);
+                }
+
+            /* Location area animations */
+            .location-area {
+                transition: all 0.3s ease;
+            }
+
+                .location-area:hover {
+                    transform: scale(1.01);
+                    border-color: var(--accent);
+                }
+
+            .btn-get-location {
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .btn-get-location:active {
+                    transform: scale(0.95);
+                }
+
+            /* Recording button animations */
+            .btn-start-recording, .btn-stop-recording {
+                transition: all 0.3s ease;
+            }
+
+                .btn-start-recording:hover, .btn-stop-recording:hover {
+                    transform: scale(1.05);
+                }
+
+                .btn-start-recording:active, .btn-stop-recording:active {
+                    transform: scale(0.95);
+                }
+
+            /* Recording pulse animation */
+            @@keyframes recordingPulse {
+                0%, 100% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+
+                50% {
+                    opacity: 0.6;
+                    transform: scale(1.1);
+                }
+            }
+
+            .btn-start-recording i, .btn-stop-recording i {
+                transition: all 0.2s ease;
+            }
+
+            .btn-start-recording:active i, .btn-stop-recording:active i {
+                transform: scale(0.9);
+            }
+
+            /* Preview container animations */
+            .preview-container {
+                animation: fadeInScale 0.3s ease-out;
+            }
+
+            /* Remove button animations */
+            .remove-file, .remove-audio, .remove-video, .remove-location {
+                transition: all 0.2s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .remove-file:hover, .remove-audio:hover, .remove-video:hover, .remove-location:hover {
+                    transform: scale(1.05);
+                    filter: brightness(1.1);
+                }
+
+                .remove-file:active, .remove-audio:active, .remove-video:active, .remove-location:active {
+                    transform: scale(0.95);
+                }
+
+            /* Form title gradient animation */
+            .form-title {
+                background: linear-gradient(135deg, var(--accent), #9b59ff, var(--accent));
+                background-size: 200% 200%;
+                -webkit-background-clip: text;
+                animation: shimmer 3s ease infinite;
+            }
+
+            /* Input focus animations */
+            .form-control:focus {
+                transform: scale(1.01);
+                transition: all 0.2s ease;
+            }
+
+            /* Select dropdown animation */
+            select.form-control {
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+                select.form-control:hover {
+                    transform: translateX(4px);
+                }
+
+            /* Loading state animation */
+            
+            @@keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .loading i, .btn-primary:disabled i {
+                animation: spin 1s linear infinite;
+            }
+
+            /* Success/Error toast animations */
+            .toast-message {
+                animation: slideInRight 0.3s ease-out;
+            }
+
+                .toast-message:hover {
+                    transform: translateX(-4px);
+                    transition: transform 0.2s ease;
+                }
+
+            /* Scroll reveal animation (optional - for elements as they scroll into view) */
+            @@keyframes scrollReveal {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .form-group {
+                animation: scrollReveal 0.5s ease-out backwards;
+            }
+
+            /* Floating animation for icons */
+            .upload-area i, .location-area i {
+                animation: float 3s ease-in-out infinite;
+            }
+
+            /* Focus ring animation */
+            .form-control:focus {
+                animation: glowPulse 1.5s infinite;
+            }
+
+            /* Button ripple effect */
+            .btn {
+                position: relative;
+                overflow: hidden;
+            }
+
+                .btn::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.4);
+                    transform: translate(-50%, -50%);
+                    transition: width 0.4s, height 0.4s;
+                }
+
+                .btn:active::after {
+                    width: 200px;
+                    height: 200px;
+                }
+
+            /* Form card border animation on hover */
+            .form-card {
+                position: relative;
+                transition: all 0.3s ease;
+            }
+
+                .form-card:hover {
+                    border-color: var(--accent);
+                    box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+                }
+
+            /* Custom checkbox/radio animation (if added later) */
+            @@keyframes checkBounce {
+                0%, 100% {
+                    transform: scale(1);
+                }
+
+                50% {
+                    transform: scale(1.2);
+                }
+            }
+    </style>
+</head>
+<body>
+    <!-- Background Video -->
+    <div class="bg-video-container">
+        <video autoplay loop muted playsinline>
+            <source src="~/assets/bg-1.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    <div class="bg-overlay"></div>
+    <div class="form-container">
+        <div class="form-header">
+            <h1 class="form-title">@Model.FormTitle</h1>
+            @if (!string.IsNullOrEmpty(Model.FormDescription))
+            {
+                <p class="form-description">@Model.FormDescription</p>
+            }
+        </div>
+
+        <div class="form-card">
+            <form id="submitForm" method="post" enctype="multipart/form-data" action="/Admin/SubmitFormData/@Model.FormId">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="FormId" value="@Model.FormId" />
+                <input type="hidden" name="TableName" value="@Model.TableName" />
+
+@foreach (var field in ((IEnumerable<dynamic>)Model.Fields).OrderBy(f => f.Order))
+    {
+                    string dbColumnName = field.Name.Replace(" ", "_");
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            @field.Label
+                            @if (field.Required)
+                            {
+                                <span class="required">*</span>
+                            }
+                        </label>
+
+                        @{
+                            var fieldType = field.Type?.ToLower();
+                        }
+
+                        @if (fieldType == "textarea")
+                        {
+                            <textarea name="@dbColumnName" class="form-control" placeholder="@field.Placeholder" @(field.Required ? "required" : "") rows="4"></textarea>
+                        }
+                        else if (fieldType == "select")
+                        {
+                            <select name="@dbColumnName" class="form-control" @(field.Required ? "required" : "")>
+                                <option value="">-- Select --</option>
+                                @foreach (var option in field.Options)
+                                {
+                                    <option value="@option">@option</option>
+                                }
+                            </select>
+                        }
+                        else if (fieldType == "number")
+                        {
+                            <input type="number" name="@dbColumnName" class="form-control" placeholder="@field.Placeholder" @(field.Required ? "required" : "") />
+                        }
+                        else if (fieldType == "date")
+                        {
+                            <input type="date" name="@dbColumnName" class="form-control" @(field.Required ? "required" : "") />
+                        }
+                        else if (fieldType == "email")
+                        {
+                            <input type="email" name="@dbColumnName" class="form-control" placeholder="@field.Placeholder" @(field.Required ? "required" : "") />
+                        }
+                        else if (fieldType == "picture")
+                        {
+                            <div class="upload-area" data-field="@dbColumnName">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 36px; color: var(--text-3); margin-bottom: 10px; display: block;"></i>
+                                <p style="color: var(--text-2); font-size: 12px;">Click to upload or take a picture</p>
+                                <input type="file" name="file_@dbColumnName" accept="image/*" capture="environment" style="display: none;" />
+                                <div class="preview-container" id="preview_@dbColumnName">
+                                    <img id="preview_img_@dbColumnName" style="max-width: 100%; max-height: 200px; border-radius: 8px;" />
+                                    <div><button type="button" class="remove-file" data-field="@dbColumnName">Remove</button></div>
+                                </div>
+                            </div>
+                        }
+                        else if (fieldType == "voice")
+                        {
+                            <div class="upload-area" data-field="@dbColumnName">
+                                <i class="fa-solid fa-microphone" style="font-size: 36px; color: var(--text-3); margin-bottom: 10px; display: block;"></i>
+                                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                    <button type="button" class="btn-start-recording btn-icon" data-field="@dbColumnName">
+                                        <i class="fa-solid fa-circle"></i> Start Recording
+                                    </button>
+                                    <button type="button" class="btn-stop-recording btn-icon-danger" data-field="@dbColumnName" style="display: none;">
+                                        <i class="fa-solid fa-stop"></i> Stop Recording
+                                    </button>
+                                </div>
+                                <div class="preview-container" id="audio_preview_@dbColumnName">
+                                    <audio controls></audio>
+                                    <div><button type="button" class="remove-audio" data-field="@dbColumnName">Remove</button></div>
+                                </div>
+                                <p style="color: var(--text-3); font-size: 11px; margin-top: 8px;">Maximum recording time: 2 minutes</p>
+                            </div>
+                        }
+                        else if (fieldType == "video")
+                        {
+                            <div class="upload-area" data-field="@dbColumnName">
+                                <i class="fa-solid fa-video" style="font-size: 36px; color: var(--text-3); margin-bottom: 10px; display: block;"></i>
+                                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                    <button type="button" class="btn-start-video-recording btn-icon" data-field="@dbColumnName">
+                                        <i class="fa-solid fa-circle"></i> Start Recording
+                                    </button>
+                                    <button type="button" class="btn-stop-video-recording btn-icon-danger" data-field="@dbColumnName" style="display: none;">
+                                        <i class="fa-solid fa-stop"></i> Stop Recording
+                                    </button>
+                                </div>
+                                <div class="preview-container" id="video_preview_@dbColumnName">
+                                    <video controls style="max-height: 300px;"></video>
+                                    <div><button type="button" class="remove-video" data-field="@dbColumnName">Remove</button></div>
+                                </div>
+                                <p style="color: var(--text-3); font-size: 11px; margin-top: 8px;">Maximum recording time: 2 minutes</p>
+                            </div>
+                        }
+                        else if (fieldType == "location")
+                        {
+                            <div class="location-area">
+                                <i class="fa-solid fa-location-dot" style="font-size: 36px; color: var(--text-3); margin-bottom: 10px; display: block;"></i>
+                                <button type="button" class="btn-get-location btn-icon" data-field="@dbColumnName">
+                                    <i class="fa-solid fa-location-crosshairs"></i> Get Current Location
+                                </button>
+                                <div class="location-info" id="location_info_@dbColumnName">
+                                    <p style="color: var(--emerald); margin-bottom: 5px;"><i class="fa-solid fa-check-circle"></i> Location captured</p>
+                                    <p class="location-details" id="location_details_@dbColumnName"></p>
+                                    <div><button type="button" class="remove-location" data-field="@dbColumnName">Clear</button></div>
+                                </div>
+                                <input type="hidden" name="@dbColumnName" id="hidden_@dbColumnName" />
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="text" name="@dbColumnName" class="form-control" placeholder="@field.Placeholder" @(field.Required ? "required" : "") />
+                        }
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/Admin/FormsList'">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastContainer" style="position: fixed; top: 90px; right: 20px; z-index: 1000;"></div>
+
+    <script>
+        function showToast(message, type) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-message toast-${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
+        }
+
+        // ==================== PICTURE UPLOAD ====================
+        document.querySelectorAll('.upload-area').forEach(area => {
+            const fieldName = area.dataset.field;
+            if (!fieldName) return;
+            
+            const fileInput = area.querySelector('input[type="file"]');
+            if (!fileInput) return;
+            
+            const previewDiv = document.getElementById(`preview_${fieldName}`);
+            const previewImg = document.getElementById(`preview_img_${fieldName}`);
+            
+            area.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-file') || 
+                    e.target.classList.contains('remove-audio') ||
+                    e.target.classList.contains('remove-video') ||
+                    e.target.classList.contains('btn-start-recording') ||
+                    e.target.classList.contains('btn-stop-recording') ||
+                    e.target.classList.contains('btn-start-video-recording') ||
+                    e.target.classList.contains('btn-stop-video-recording')) return;
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (previewImg) previewImg.src = e.target.result;
+                        if (previewDiv) previewDiv.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            const removeBtn = area.querySelector('.remove-file');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    fileInput.value = '';
+                    if (previewDiv) previewDiv.style.display = 'none';
+                    if (previewImg) previewImg.src = '';
+                });
+            }
+        });
+
+        // ==================== VOICE RECORDING ====================
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let currentAudioStream = null;
+
+        document.querySelectorAll('.btn-start-recording').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const fieldName = this.dataset.field;
+                const stopBtn = document.querySelector(`.btn-stop-recording[data-field="${fieldName}"]`);
+                const startBtn = this;
+                const audioPreview = document.getElementById(`audio_preview_${fieldName}`);
+                const area = document.querySelector(`.upload-area[data-field="${fieldName}"]`);
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    currentAudioStream = stream;
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audioElement = audioPreview.querySelector('audio');
+                        audioElement.src = audioUrl;
+                        audioPreview.style.display = 'block';
+                        
+                        let fileInput = area.querySelector(`input[name="file_${fieldName}"]`);
+                        if (!fileInput) {
+                            fileInput = document.createElement('input');
+                            fileInput.type = 'file';
+                            fileInput.name = `file_${fieldName}`;
+                            fileInput.accept = 'audio/*';
+                            fileInput.style.display = 'none';
+                            area.appendChild(fileInput);
+                        }
+                        
+                        const fileName = `recording_${Date.now()}.webm`;
+                        const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(audioFile);
+                        fileInput.files = dataTransfer.files;
+                        
+                        startBtn.style.display = 'inline-flex';
+                        stopBtn.style.display = 'none';
+                        if (currentAudioStream) {
+                            currentAudioStream.getTracks().forEach(track => track.stop());
+                            currentAudioStream = null;
+                        }
+                    };
+                    
+                    mediaRecorder.start();
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-flex';
+                    
+                    setTimeout(() => {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, 120000);
+                    
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    showToast('Unable to access microphone. Please check permissions.', 'error');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-stop-recording').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            });
+        });
+
+        document.querySelectorAll('.remove-audio').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fieldName = this.dataset.field;
+                const audioPreview = document.getElementById(`audio_preview_${fieldName}`);
+                const fileInput = document.querySelector(`input[name="file_${fieldName}"]`);
+                
+                audioPreview.style.display = 'none';
+                const audioElement = audioPreview.querySelector('audio');
+                if (audioElement) audioElement.src = '';
+                if (fileInput) fileInput.value = '';
+                
+                const startBtn = document.querySelector(`.btn-start-recording[data-field="${fieldName}"]`);
+                const stopBtn = document.querySelector(`.btn-stop-recording[data-field="${fieldName}"]`);
+                if (startBtn) startBtn.style.display = 'inline-flex';
+                if (stopBtn) stopBtn.style.display = 'none';
+            });
+        });
+
+        // ==================== VIDEO RECORDING ====================
+        let videoRecorder = null;
+        let videoChunks = [];
+        let currentVideoStream = null;
+
+        document.querySelectorAll('.btn-start-video-recording').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const fieldName = this.dataset.field;
+                const stopBtn = document.querySelector(`.btn-stop-video-recording[data-field="${fieldName}"]`);
+                const startBtn = this;
+                const videoPreview = document.getElementById(`video_preview_${fieldName}`);
+                const area = document.querySelector(`.upload-area[data-field="${fieldName}"]`);
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    currentVideoStream = stream;
+                    
+                    const videoElement = videoPreview.querySelector('video');
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                    
+                    videoRecorder = new MediaRecorder(stream);
+                    videoChunks = [];
+                    
+                    videoRecorder.ondataavailable = event => {
+                        videoChunks.push(event.data);
+                    };
+                    
+                    videoRecorder.onstop = () => {
+                        const videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+                        const videoUrl = URL.createObjectURL(videoBlob);
+                        const videoElement = videoPreview.querySelector('video');
+                        videoElement.srcObject = null;
+                        videoElement.src = videoUrl;
+                        videoPreview.style.display = 'block';
+                        
+                        let fileInput = area.querySelector(`input[name="file_${fieldName}"]`);
+                        if (!fileInput) {
+                            fileInput = document.createElement('input');
+                            fileInput.type = 'file';
+                            fileInput.name = `file_${fieldName}`;
+                            fileInput.accept = 'video/*';
+                            fileInput.style.display = 'none';
+                            area.appendChild(fileInput);
+                        }
+                        
+                        const fileName = `video_${Date.now()}.webm`;
+                        const videoFile = new File([videoBlob], fileName, { type: 'video/webm' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(videoFile);
+                        fileInput.files = dataTransfer.files;
+                        
+                        startBtn.style.display = 'inline-flex';
+                        stopBtn.style.display = 'none';
+                        if (currentVideoStream) {
+                            currentVideoStream.getTracks().forEach(track => track.stop());
+                            currentVideoStream = null;
+                        }
+                    };
+                    
+                    videoRecorder.start();
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-flex';
+                    
+                    setTimeout(() => {
+                        if (videoRecorder && videoRecorder.state === 'recording') {
+                            videoRecorder.stop();
+                        }
+                    }, 120000);
+                    
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    showToast('Unable to access camera. Please check permissions.', 'error');
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-stop-video-recording').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (videoRecorder && videoRecorder.state === 'recording') {
+                    videoRecorder.stop();
+                }
+            });
+        });
+
+        document.querySelectorAll('.remove-video').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fieldName = this.dataset.field;
+                const videoPreview = document.getElementById(`video_preview_${fieldName}`);
+                const fileInput = document.querySelector(`input[name="file_${fieldName}"]`);
+                
+                videoPreview.style.display = 'none';
+                const videoElement = videoPreview.querySelector('video');
+                if (videoElement) {
+                    videoElement.src = '';
+                    videoElement.srcObject = null;
+                }
+                if (fileInput) fileInput.value = '';
+                
+                const startBtn = document.querySelector(`.btn-start-video-recording[data-field="${fieldName}"]`);
+                const stopBtn = document.querySelector(`.btn-stop-video-recording[data-field="${fieldName}"]`);
+                if (startBtn) startBtn.style.display = 'inline-flex';
+                if (stopBtn) stopBtn.style.display = 'none';
+            });
+        });
+
+        // ==================== LOCATION ====================
+        document.querySelectorAll('.btn-get-location').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fieldName = this.dataset.field;
+                const locationInfo = document.getElementById(`location_info_${fieldName}`);
+                const locationDetails = document.getElementById(`location_details_${fieldName}`);
+                const hiddenData = document.getElementById(`hidden_${fieldName}`);
+                
+                if (!navigator.geolocation) {
+                    showToast('Geolocation is not supported by your browser', 'error');
+                    return;
+                }
+                
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Getting location...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        
+                        locationDetails.innerHTML = `<i class="fa-solid fa-map-pin"></i> Latitude: ${lat}, Longitude: ${lng}<br><small>Accuracy: ${Math.round(accuracy)}m</small>`;
+                        hiddenData.value = JSON.stringify({ lat, lng, accuracy });
+                        locationInfo.style.display = 'block';
+                        btn.innerHTML = '<i class="fa-solid fa-location-dot"></i> Location Captured';
+                        btn.style.background = 'var(--emerald)';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            btn.style.background = 'var(--accent)';
+                        }, 3000);
+                    },
+                    function(error) {
+                        let errorMsg = 'Unable to get location. ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED: errorMsg += 'Please allow location access.'; break;
+                            case error.POSITION_UNAVAILABLE: errorMsg += 'Location unavailable.'; break;
+                            case error.TIMEOUT: errorMsg += 'Location request timed out.'; break;
+                            default: errorMsg += 'Please try again.';
+                        }
+                        showToast(errorMsg, 'error');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            });
+        });
+
+        document.querySelectorAll('.remove-location').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fieldName = this.dataset.field;
+                const locationInfo = document.getElementById(`location_info_${fieldName}`);
+                const hiddenData = document.getElementById(`hidden_${fieldName}`);
+                
+                locationInfo.style.display = 'none';
+                hiddenData.value = '';
+            });
+        });
+
+        // Form submission
+        const form = document.getElementById('submitForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const originalContent = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                submitBtn.disabled = true;
+                form.classList.add('loading');
+                
+                setTimeout(() => {
+                    if (submitBtn.disabled) {
+                        submitBtn.innerHTML = originalContent;
+                        submitBtn.disabled = false;
+                        form.classList.remove('loading');
+                    }
+                }, 30000);
+            });
+        }
+    </script>
+    <script>
+                    // Scroll Reveal Animation (triggers when elements come into view)
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'fadeInUp 0.5s ease-out forwards';
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all form groups for scroll animation
+            document.querySelectorAll('.form-group').forEach(el => {
+                el.style.opacity = '0';
+                observer.observe(el);
+            });
+
+            // Add loading animation to submit button when clicked
+            const submitForm = document.getElementById('submitForm');
+            if (submitForm) {
+                submitForm.addEventListener('submit', function() {
+                    const btn = document.getElementById('submitBtn');
+                    btn.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        btn.style.transform = 'scale(1)';
+                    }, 150);
+                });
+            }
+
+            // Add hover sound effect simulation (visual only)
+            const buttons = document.querySelectorAll('.btn, .btn-icon, .btn-get-location');
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+    </script>
+</body>
+</html>

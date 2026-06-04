@@ -1,0 +1,581 @@
+﻿@{
+    ViewData["Title"] = "User Provisioning";
+}
+
+@section Styles {
+    <style>
+        #bgVideo {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            filter: brightness(0.4) blur(3px);
+            transform: scale(1.02);
+        }
+
+        .overlay-dark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.65), rgba(8, 10, 18, 0.85));
+            backdrop-filter: blur(6px);
+            z-index: -1;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .page-wrapper {
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 1;
+            padding-top: 20px;
+        }
+
+        .header-section {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-1);
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+
+        .grid-layout {
+            display: block;
+        }
+
+        .form-panel {
+            background: rgba(18, 20, 30, 0.65) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 30px;
+            backdrop-filter: blur(14px);
+            animation: fadeInUp 0.8s ease-out both;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+            .input-group label {
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+                .input-group label .required {
+                    color: var(--crimson);
+                    margin-left: 4px;
+                }
+
+        .form-panel input,
+        .form-panel select,
+        .form-panel textarea {
+            background: rgba(6, 9, 19, 0.55);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-1);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+            .form-panel input:focus,
+            .form-panel select:focus,
+            .form-panel textarea:focus {
+                outline: none;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 4px rgba(0, 200, 255, 0.1);
+                background: rgba(28, 32, 48, 0.8);
+            }
+
+            .form-panel select option {
+                background: #0d1527;
+                color: #e8eef5;
+            }
+
+        .actions {
+            margin-top: 32px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost {
+            background: rgba(18, 20, 30, 0.65);
+            border-color: rgba(255,255,255,0.08);
+            color: var(--text-2);
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+            .btn-primary:hover,
+            .btn-ghost:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.1);
+            }
+
+        .btn-ghost:hover {
+            background: rgba(28, 32, 48, 0.8);
+            color: var(--text-1);
+        }
+
+        .alert-success {
+            background: rgba(0, 224, 158, 0.1);
+            border: 1px solid var(--emerald);
+            color: var(--emerald);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            backdrop-filter: blur(12px);
+        }
+
+        .alert-error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--crimson);
+            color: var(--crimson);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            backdrop-filter: blur(12px);
+        }
+
+        .vt-wrap {
+            position: relative;
+        }
+
+        .vt-tip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background: #1a0005;
+            border: 1px solid #ff4757;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 11px;
+            color: #ffffff;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(4px);
+            transition: all 0.25s ease;
+            z-index: 9999;
+            font-family: inherit;
+        }
+
+            .vt-tip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 14px;
+                border: 5px solid transparent;
+                border-top-color: #ff4757;
+            }
+
+            .vt-tip.vt-show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        .vt-input-err {
+            border-color: #ff4757 !important;
+            animation: vtGlowPulse 0.9s ease 0s 2;
+        }
+
+        @@keyframes vtGlowPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 71, 87, 0.2), 0 0 18px rgba(255, 71, 87, 0.12);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: span 1;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+<video autoplay muted loop playsinline id="bgVideo">
+    <source src="~/assets/bg-1.mp4" type="video/mp4">
+</video>
+<div class="overlay-dark"></div>
+
+<div class="container-fluid page-wrapper">
+    <div class="header-section">
+        <h1 class="page-title">User Provisioning</h1>
+        <p class="page-sub">Create new employee identities and define operational access levels for EAM.</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success">
+            <i class="fa-solid fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <i class="fa-solid fa-exclamation-circle"></i> @ViewBag.Error
+        </div>
+    }
+
+    <form method="post" action="/Admin/UserCreation">
+        @Html.AntiForgeryToken()
+
+        <div class="grid-layout">
+            <div class="form-panel">
+                <div class="form-section-title">
+                    <span style="font-size: 18px;">👤</span> Profile Information
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Full Name <span class="required">*</span></label>
+                        <input type="text" name="FullName" value="@Model?.FullName" placeholder="Full Name" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Employee ID <span class="required">*</span></label>
+                        <input type="text" name="EmployeeId" value="@Model?.EmployeeId" placeholder="Employee Id" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Username <span class="required">*</span></label>
+                        <input type="text" name="UserName" value="@Model?.UserName" placeholder="Username" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Corporate Email <span class="required">*</span></label>
+                        <input type="email" name="Email" value="@Model?.Email" placeholder="Email Id" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Mobile Number</label>
+                        <input type="tel" name="MobileNo" value="@Model?.MobileNo" placeholder="Mobile Number" maxlength="10" />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Functional Department <span class="required">*</span></label>
+                        <select name="DepartmentId" required>
+                            <option value="">Select Department</option>
+                            @if (Model?.Departments != null)
+                            {
+                                foreach (var dept in Model.Departments)
+                                {
+                                    <option value="@dept.department_id" selected="@(Model.DepartmentId == dept.department_id)">
+                                        @dept.department_name
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Role <span class="required">*</span></label>
+                        <select name="RoleId" required>
+                            <option value="">Select Role</option>
+                            @if (Model?.Roles != null)
+                            {
+                                foreach (var role in Model.Roles)
+                                {
+                                    <option value="@role.roleid" selected="@(Model.RoleId == role.roleid)">
+                                        @role.rolename
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Site / Location</label>
+                        <input type="text" name="Site" value="@Model?.Site" placeholder="Location" />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Shift</label>
+                        <select name="Shift">
+                            <option value="General" selected="@(Model?.Shift == "General")">General</option>
+                            <option value="Morning" selected="@(Model?.Shift == "Morning")">Morning</option>
+                            <option value="Evening" selected="@(Model?.Shift == "Evening")">Evening</option>
+                            <option value="Night" selected="@(Model?.Shift == "Night")">Night</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Assigned Zone / Substation</label>
+                        <input type="text" name="Location" value="@Model?.Location" placeholder="Enter Substation Code" />
+                    </div>
+                </div>
+
+                <div class="form-section-title" style="margin-top: 40px; color: var(--violet);">
+                    <span style="font-size: 18px;">🛡️</span> Authentication Security
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group full-width">
+                        <label>Default Password <span class="required">*</span></label>
+                        <input type="password" name="Password" placeholder="••••••••••••" required />
+                        <small style="color: var(--text-3); font-size: 10px;">Minimum 6 characters, include numbers and letters</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="reset" class="btn btn-ghost">Discard Draft</button>
+                <button type="submit" class="btn btn-primary">Initialize User Access</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const mobileValid = v => v === '' || /^[6-9]\d{9}$/.test(v.trim());
+
+        const mobileTipMsg = v => {
+            if (v === '') return '\u25b3 Enter a valid 10-digit mobile number';
+            if (!/^[6-9]/.test(v)) return '\u25b3 Number must start with 6, 7, 8 or 9';
+            if (v.length < 10) return '\u25b3 Mobile number must be exactly 10 digits';
+            return '\u25b3 Enter a valid 10-digit mobile number';
+        };
+
+        const vtRules = [
+            { name: 'FullName', msg: '\u25b3 Full name is required', test: v => v.trim().length >= 3 },
+            { name: 'EmployeeId', msg: '\u25b3 Employee ID is required', test: v => v.trim().length > 0 },
+            { name: 'UserName', msg: '\u25b3 Username must be 3+ characters', test: v => v.trim().length >= 3 },
+            { name: 'Email', msg: '\u25b3 Enter a valid email address', test: v => /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(v.trim()) },
+            { name: 'DepartmentId', msg: '\u25b3 Please select a department', test: v => v !== '' },
+            { name: 'RoleId', msg: '\u25b3 Please select a role', test: v => v !== '' },
+            { name: 'Password', msg: '\u25b3 Min 6 chars with letters & numbers', test: v => v.length >= 6 && /[a-zA-Z]/.test(v) && /\d/.test(v) },
+            { name: 'MobileNo', msg: '\u25b3 Enter a valid 10-digit mobile number', test: mobileValid, optional: true },
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            vtRules.forEach(rule => {
+                const el = document.querySelector(`[name="${rule.name}"]`);
+                if (!el) return;
+
+                const wrap = document.createElement('div');
+                wrap.className = 'vt-wrap';
+                el.parentNode.insertBefore(wrap, el);
+                wrap.appendChild(el);
+
+                const tip = document.createElement('div');
+                tip.className = 'vt-tip';
+                tip.textContent = rule.msg;
+                wrap.appendChild(tip);
+
+                if (rule.name === 'MobileNo') {
+                    el.addEventListener('keydown', (e) => {
+                        const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
+
+                        if (allowed.includes(e.key)) return;
+
+                        if (!/^\d$/.test(e.key)) {
+                            e.preventDefault();
+                            return;
+                        }
+
+                        if (el.value.length === 0 && !/^[6-9]$/.test(e.key)) {
+                            e.preventDefault();
+                            tip.textContent = '\u25b3 Number must start with 6, 7, 8 or 9';
+                            el.classList.remove('vt-input-err');
+                            void el.offsetWidth;
+                            el.classList.add('vt-input-err');
+                            tip.classList.add('vt-show');
+                            return;
+                        }
+                    });
+
+                    el.addEventListener('input', () => {
+                        el.value = el.value.replace(/[^0-9]/g, '');
+
+                        if (el.value.length > 0 && !/^[6-9]/.test(el.value)) {
+                            el.value = '';
+                            tip.textContent = '\u25b3 Number must start with 6, 7, 8 or 9';
+                            el.classList.remove('vt-input-err');
+                            void el.offsetWidth;
+                            el.classList.add('vt-input-err');
+                            tip.classList.add('vt-show');
+                            return;
+                        }
+
+                        tip.textContent = mobileTipMsg(el.value);
+
+                        if (mobileValid(el.value)) {
+                            el.classList.remove('vt-input-err');
+                            tip.classList.remove('vt-show');
+                        } else if (tip.classList.contains('vt-show')) {
+                            el.classList.remove('vt-input-err');
+                            void el.offsetWidth;
+                            el.classList.add('vt-input-err');
+                        }
+                    });
+
+                    el.addEventListener('blur', () => {
+                        if (el.value !== '' && !mobileValid(el.value)) {
+                            tip.textContent = mobileTipMsg(el.value);
+                            el.classList.remove('vt-input-err');
+                            void el.offsetWidth;
+                            el.classList.add('vt-input-err');
+                            tip.classList.add('vt-show');
+                        }
+                    });
+
+                    el.addEventListener('focus', () => {
+                        if (mobileValid(el.value)) {
+                            el.classList.remove('vt-input-err');
+                            tip.classList.remove('vt-show');
+                        }
+                    });
+
+                } else {
+                    el.addEventListener('input', () => {
+                        if (rule.test(el.value)) {
+                            el.classList.remove('vt-input-err');
+                            tip.classList.remove('vt-show');
+                        } else if (tip.classList.contains('vt-show')) {
+                            el.classList.remove('vt-input-err');
+                            void el.offsetWidth;
+                            el.classList.add('vt-input-err');
+                        }
+                    });
+
+                    el.addEventListener('change', () => {
+                        if (rule.test(el.value)) {
+                            el.classList.remove('vt-input-err');
+                            tip.classList.remove('vt-show');
+                        }
+                    });
+                }
+
+                el._vtTip = tip;
+                el._vtRule = rule;
+            });
+
+            const form = document.querySelector('form[action="/Admin/UserCreation"]');
+            if (!form) return;
+
+            form.setAttribute('novalidate', '');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                let firstErr = null;
+
+                vtRules.forEach(rule => {
+                    const el = document.querySelector(`[name="${rule.name}"]`);
+                    if (!el) return;
+
+                    const ok = rule.name === 'MobileNo'
+                        ? mobileValid(el.value)
+                        : rule.test(el.value);
+
+                    if (!ok) {
+                        el.classList.remove('vt-input-err');
+                        void el.offsetWidth;
+                        el.classList.add('vt-input-err');
+
+                        if (rule.name === 'MobileNo') {
+                            el._vtTip.textContent = mobileTipMsg(el.value);
+                        }
+
+                        el._vtTip?.classList.add('vt-show');
+
+                        if (!firstErr) firstErr = el;
+                    }
+                });
+
+                if (firstErr) {
+                    firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstErr.focus();
+                    return;
+                }
+
+                form.submit();
+            });
+        });
+    </script>
+}

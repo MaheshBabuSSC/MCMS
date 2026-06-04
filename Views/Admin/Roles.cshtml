@@ -1,0 +1,1265 @@
+﻿@model List<CMS.Models.RoleModel>
+
+@{
+    ViewData["Title"] = "Access Control & Roles";
+    var userCounts = ViewBag.UserCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+@section Styles {
+    <style>
+        :root {
+            --bg-deep: #060913;
+            --bg-panel: rgba(13, 20, 33, 0.85);
+            --bg-card: #0d1527;
+            --bg-hover: #15223c;
+            --border: rgba(30, 45, 69, 0.7);
+            --border-lit: #00c8ff;
+            --accent: #00c8ff;
+            --accent-dim: #0096c0;
+            --amber: #f5a623;
+            --emerald: #00e09e;
+            --crimson: #ff4757;
+            --violet: #9b59ff;
+            --text-1: #e8eef5;
+            --text-2: #8a9db8;
+            --text-3: #4a6080;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-1);
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        @@keyframes pageReveal {
+            0% {
+                opacity: 0;
+                transform: scale(0.96) translateY(40px);
+                filter: blur(6px);
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.01) translateY(-4px);
+                filter: blur(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes cardReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translateY(-5px) scale(1.015);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @@keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .page-enter {
+            animation: pageReveal 0.9s cubic-bezier(0.22,1,0.36,1) forwards;
+            height: 100%;
+            width: 100%;
+        }
+
+        .roles-wrap {
+            padding: 24px 24px 24px;
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .roles-wrap::before {
+                content: '';
+                position: fixed;
+                width: 700px;
+                height: 500px;
+                background: radial-gradient(ellipse, rgba(0,200,255,0.045) 0%, transparent 65%);
+                pointer-events: none;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%,-50%);
+                animation: ambientPulse 8s ease-in-out infinite;
+                z-index: 0;
+            }
+
+        @@keyframes ambientPulse {
+            0%, 100% {
+                opacity: 0.4;
+                transform: translate(-50%,-50%) scale(1);
+            }
+
+            50% {
+                opacity: 0.9;
+                transform: translate(-50%,-50%) scale(1.2);
+            }
+        }
+
+        #bgVideo {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -3;
+            filter: brightness(0.45) blur(4px);
+            transform: scale(1.03);
+        }
+
+        .video-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(0, 200, 255, 0.08), transparent 40%), radial-gradient(circle at bottom left, rgba(155, 89, 255, 0.08), transparent 40%), rgba(0, 0, 0, 0.45);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .role-list-panel,
+        .matrix-panel,
+        .modal-content {
+            background: rgba(13, 21, 39, 0.68) !important;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .role-card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(10px);
+        }
+
+        .matrix-table th {
+            background: rgba(13, 21, 39, 0.92);
+            backdrop-filter: blur(14px);
+        }
+
+        .toast-notification {
+            background: rgba(13, 21, 39, 0.85);
+            backdrop-filter: blur(14px);
+        }
+
+        /* Header - fixed at top */
+        .page-header {
+            text-align: center;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+            .page-header h1 {
+                font-size: 28px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+                background: linear-gradient(135deg, var(--text-1), var(--accent));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+            }
+
+        .header-sub {
+            font-size: 11px;
+            color: var(--text-3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+            .header-sub::before,
+            .header-sub::after {
+                content: '';
+                height: 1px;
+                width: 50px;
+                background: linear-gradient(90deg, transparent, rgba(0,200,255,0.4));
+            }
+
+            .header-sub::after {
+                background: linear-gradient(90deg, rgba(0,200,255,0.4), transparent);
+            }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--emerald);
+            animation: pulse 2s infinite;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .4;
+                transform: scale(0.8);
+            }
+        }
+
+        /* Main Grid - takes remaining height */
+        .roles-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            align-items: start;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Role List Panel - full height with scroll */
+        .role-list-panel {
+            background: rgba(18, 20, 30, 0.65) !important;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            animation: cardReveal 0.65s cubic-bezier(0.34,1.5,0.64,1) both;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: calc(100vh - 140px);
+        }
+
+        .role-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .role-header-title {
+            font-size: 11px;
+            color: var(--text-3);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .role-list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            min-height: 0;
+        }
+
+            .role-list-scroll::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .role-list-scroll::-webkit-scrollbar-track {
+                background: var(--bg-deep);
+                border-radius: 4px;
+            }
+
+            .role-list-scroll::-webkit-scrollbar-thumb {
+                background: var(--accent-dim);
+                border-radius: 4px;
+            }
+
+        .role-card {
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            position: relative;
+            background: rgba(13, 21, 39, 0.6);
+        }
+
+            .role-card:last-child {
+                margin-bottom: 0;
+            }
+
+            .role-card:hover {
+                background: var(--bg-hover);
+                transform: translateX(4px);
+                border-color: var(--border);
+            }
+
+            .role-card.active {
+                background: linear-gradient(135deg, rgba(155, 89, 255, 0.12), rgba(0, 200, 255, 0.06));
+                border-color: var(--violet);
+                box-shadow: 0 4px 12px rgba(155, 89, 255, 0.1);
+            }
+
+        .role-name {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .role-count {
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: block;
+        }
+
+        .role-delete-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 12px;
+            background: rgba(255, 71, 87, 0.1);
+            border: none;
+            color: var(--crimson);
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0;
+        }
+
+        .role-card:hover .role-delete-btn {
+            opacity: 1;
+        }
+
+        .role-delete-btn:hover {
+            background: var(--crimson);
+            color: white;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        /* Matrix Panel - full height with scroll */
+        .matrix-panel {
+            background: rgba(18, 20, 30, 0.65) !important;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 24px 24px;
+            animation: cardReveal 0.65s cubic-bezier(0.34,1.5,0.64,1) 0.1s both;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: calc(100vh - 140px);
+            overflow: hidden;
+        }
+
+        .matrix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .selected-role-title {
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--violet), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .batch-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .batch-btn {
+            background: rgba(0, 200, 255, 0.06);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .batch-btn:hover {
+                background: var(--accent);
+                color: var(--bg-deep);
+                transform: translateY(-1px);
+            }
+
+        /* Permission matrix scrollable area */
+        .permission-matrix {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            margin-bottom: 20px;
+        }
+
+            .permission-matrix::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .permission-matrix::-webkit-scrollbar-track {
+                background: var(--bg-deep);
+                border-radius: 4px;
+            }
+
+            .permission-matrix::-webkit-scrollbar-thumb {
+                background: var(--accent-dim);
+                border-radius: 4px;
+            }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .matrix-table th {
+                text-align: left;
+                padding: 12px 10px;
+                font-size: 10px;
+                text-transform: uppercase;
+                color: var(--text-3);
+                border-bottom: 1px solid var(--border);
+                font-weight: 600;
+                letter-spacing: 1px;
+                position: sticky;
+                top: 0;
+                background: var(--bg-card);
+                z-index: 10;
+            }
+
+                .matrix-table th:not(:first-child) {
+                    text-align: center;
+                    width: 70px;
+                }
+
+            .matrix-table td {
+                padding: 12px 10px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+                font-size: 12px;
+                vertical-align: middle;
+            }
+
+                .matrix-table td:first-child {
+                    font-weight: 500;
+                }
+
+                .matrix-table td:not(:first-child) {
+                    text-align: center;
+                }
+
+        .module-group {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+            vertical-align: middle;
+        }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--bg-deep);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid var(--border);
+        }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 2px;
+                bottom: 2px;
+                background-color: var(--text-3);
+                transition: .3s;
+                border-radius: 50%;
+            }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, var(--violet), var(--accent-dim));
+            border-color: var(--violet);
+        }
+
+            input:checked + .slider:before {
+                transform: translateX(22px);
+                background-color: white;
+            }
+
+        input:disabled + .slider {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .btn-add, .btn-save {
+            background: linear-gradient(135deg, var(--violet) 0%, var(--accent-dim) 100%);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .btn-add:hover, .btn-save:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 16px rgba(155, 89, 255, 0.35);
+            }
+
+            .btn-add:disabled, .btn-save:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        /* Loading State */
+        .permission-matrix.loading {
+            opacity: 0.5;
+            pointer-events: none;
+            position: relative;
+        }
+
+            .permission-matrix.loading::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 30px;
+                height: 30px;
+                border: 2px solid var(--border);
+                border-top-color: var(--accent);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+            }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            backdrop-filter: blur(12px);
+        }
+
+            .toast-notification.success {
+                border-left-color: var(--emerald);
+            }
+
+            .toast-notification.error {
+                border-left-color: var(--crimson);
+            }
+
+            .toast-notification.warning {
+                border-left-color: var(--amber);
+            }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .modal.active {
+                display: flex;
+            }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px 32px;
+            max-width: 440px;
+            width: 90%;
+            animation: fadeInUp 0.3s ease;
+        }
+
+            .modal-content h3 {
+                font-size: 22px;
+                margin-bottom: 20px;
+                background: linear-gradient(135deg, var(--accent), var(--violet));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .modal-content input {
+                width: 100%;
+                padding: 12px 16px;
+                margin-bottom: 24px;
+                background: var(--bg-deep);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                color: var(--text-1);
+                font-family: inherit;
+                font-size: 13px;
+                transition: all 0.2s;
+            }
+
+                .modal-content input:focus {
+                    outline: none;
+                    border-color: var(--accent);
+                    box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1);
+                }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+            .modal-buttons .btn-cancel {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--border);
+                color: var(--text-2);
+                padding: 9px 20px;
+                border-radius: 40px;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+                .modal-buttons .btn-cancel:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
+        /* Empty state */
+        .empty-roles {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-3);
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .roles-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .roles-wrap {
+                padding: 16px;
+            }
+
+            .matrix-panel, .role-list-panel {
+                max-height: calc(100vh - 200px);
+            }
+
+            .matrix-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .batch-controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .action-buttons {
+                justify-content: stretch;
+            }
+
+            .btn-add, .btn-save {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .page-header h1 {
+                font-size: 22px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .matrix-table th, .matrix-table td {
+                padding: 8px 6px;
+            }
+
+            .module-group {
+                font-size: 11px;
+            }
+
+            .switch {
+                width: 38px;
+                height: 20px;
+            }
+
+            .slider:before {
+                height: 14px;
+                width: 14px;
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(18px);
+            }
+        }
+    </style>
+}
+<video autoplay muted loop playsinline id="bgVideo">
+    <source src="~/assets/bg-1.mp4" type="video/mp4">
+</video>
+
+<div class="video-overlay"></div>
+<div class="page-enter">
+    <div class="roles-wrap">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🔐 Security Roles & Permissions</h1>
+            <div class="header-sub">
+                <span class="live-dot"></span>
+                Define system-wide access policies · Role-Based Access Control
+            </div>
+        </div>
+
+        <div class="roles-grid">
+            <!-- Role List Panel -->
+            <div class="role-list-panel">
+                <div class="role-header">
+                    <span class="role-header-title">📋 SYSTEM ROLES</span>
+                    <span class="role-header-title" id="roleCount">@(Model?.Count ?? 0) Total</span>
+                </div>
+
+                <div class="role-list-scroll" id="roleList">
+                    @if (Model != null && Model.Any())
+                    {
+                        var firstRole = Model.FirstOrDefault();
+                        foreach (var role in Model)
+                        {
+                            var userCount = userCounts.ContainsKey(role.roleid) ? userCounts[role.roleid] : 0;
+                            <div class="role-card @(firstRole?.roleid == role.roleid ? "active" : "")"
+                                 data-role-id="@role.roleid"
+                                 data-role-name="@role.rolename">
+                                <span class="role-name">@role.rolename</span>
+                                <span class="role-count">👥 @userCount Active Users</span>
+                                <button class="role-delete-btn" onclick="event.stopPropagation(); deleteRole(@role.roleid)">Delete</button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-roles">
+                            📭 No roles found
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Permissions Matrix -->
+            <div class="matrix-panel">
+                <div class="matrix-header">
+                    <h3 class="selected-role-title" id="selectedRoleTitle">⚠️ Select a role to edit permissions</h3>
+                    <div class="batch-controls">
+                        <button class="batch-btn" id="grantAllBtn">✓ Grant All</button>
+                        <button class="batch-btn" id="revokeAllBtn">✗ Revoke All</button>
+                        <button class="batch-btn" id="resetBtn">↺ Reset</button>
+                    </div>
+                </div>
+
+                <div class="permission-matrix" id="permissionMatrix">
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Module Name</th>
+                                <th>👁️ View</th>
+                                <th>➕ Create</th>
+                                <th>✏️ Modify</th>
+                                <th>🗑️ Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="permissionsBody">
+                            <!-- Manage Forms Module -->
+                            <tr data-module="Manage Forms">
+                                <td class="module-group">
+                                    <span>📝</span> Manage Forms
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-view">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-create">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-modify">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-delete">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                            </tr>
+
+                            <!-- User Management Module -->
+                            <tr data-module="User Management">
+                                <td class="module-group">
+                                    <span>👤</span> User Management
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-view">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-create">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-modify">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" class="perm-delete">
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-add" id="createRoleBtn">+ Create New Role</button>
+                    <button class="btn-save" id="saveBtn">💾 Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Role -->
+<div id="createRoleModal" class="modal">
+    <div class="modal-content">
+        <h3>✨ Create New Role</h3>
+        <input type="text" id="roleNameInput" placeholder="Enter role name" maxlength="100" autocomplete="off">
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+            <button class="btn-add" id="confirmCreateBtn">Create Role</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentRoleId = null;
+        let originalPermissions = null;
+
+        const modules = [
+            'Manage Forms',
+            'User Management'
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            setupPermissionDependencies();
+
+            const firstRole = document.querySelector('.role-card');
+            if (firstRole) firstRole.click();
+        });
+
+        function setupEventListeners() {
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('role-delete-btn')) {
+                        selectRole(parseInt(card.dataset.roleId), card.dataset.roleName);
+                    }
+                });
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', savePermissions);
+            document.getElementById('grantAllBtn').addEventListener('click', () => grantAllPermissions(true));
+            document.getElementById('revokeAllBtn').addEventListener('click', () => grantAllPermissions(false));
+            document.getElementById('resetBtn').addEventListener('click', resetPermissions);
+            document.getElementById('createRoleBtn').addEventListener('click', openCreateModal);
+            document.getElementById('confirmCreateBtn').addEventListener('click', createRole);
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (currentRoleId) savePermissions();
+                }
+                if (e.key === 'Escape') closeCreateModal();
+            });
+        }
+
+        async function selectRole(roleId, roleName) {
+            currentRoleId = roleId;
+
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('active'));
+            document.querySelector(`.role-card[data-role-id="${roleId}"]`).classList.add('active');
+            document.getElementById('selectedRoleTitle').innerHTML = `✏️ Editing: ${roleName}`;
+
+            showLoading();
+
+            try {
+                const response = await fetch(`/Admin/Roles/${roleId}/Permissions`);
+                if (!response.ok) throw new Error('Failed to load permissions');
+
+                const permissions = await response.json();
+                originalPermissions = JSON.parse(JSON.stringify(permissions));
+                updatePermissionMatrix(permissions);
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to load permissions', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updatePermissionMatrix(permissions) {
+            const rows = document.querySelectorAll('#permissionsBody tr');
+
+            rows.forEach(row => {
+                const moduleName = row.dataset.module;
+                const modulePerms = permissions.find(p => p.moduleName === moduleName);
+
+                if (modulePerms) {
+                    const viewCheckbox = row.querySelector('.perm-view');
+                    const createCheckbox = row.querySelector('.perm-create');
+                    const modifyCheckbox = row.querySelector('.perm-modify');
+                    const deleteCheckbox = row.querySelector('.perm-delete');
+
+                    if (viewCheckbox) viewCheckbox.checked = modulePerms.canView || false;
+                    if (createCheckbox) createCheckbox.checked = modulePerms.canCreate || false;
+                    if (modifyCheckbox) modifyCheckbox.checked = modulePerms.canModify || false;
+                    if (deleteCheckbox) deleteCheckbox.checked = modulePerms.canDelete || false;
+                }
+            });
+
+            applyPermissionDependencies();
+        }
+
+        function collectPermissions() {
+            const permissions = [];
+            const rows = document.querySelectorAll('#permissionsBody tr');
+
+            rows.forEach(row => {
+                permissions.push({
+                    moduleName: row.dataset.module,
+                    canView: row.querySelector('.perm-view').checked,
+                    canCreate: row.querySelector('.perm-create').checked,
+                    canModify: row.querySelector('.perm-modify').checked,
+                    canDelete: row.querySelector('.perm-delete').checked
+                });
+            });
+            return permissions;
+        }
+
+        async function savePermissions() {
+            if (!currentRoleId) {
+                showToast('Please select a role first', 'warning');
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '💾 Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/Admin/Roles/${currentRoleId}/Permissions`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(collectPermissions())
+                });
+
+                if (response.ok) {
+                    showToast('Permissions saved successfully!', 'success');
+                    originalPermissions = JSON.parse(JSON.stringify(collectPermissions()));
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Save failed');
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to save permissions', 'error');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        function grantAllPermissions(grant) {
+            const checkboxes = document.querySelectorAll('#permissionsBody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = grant);
+            applyPermissionDependencies();
+            showToast(grant ? 'All permissions granted' : 'All permissions revoked', 'success');
+        }
+
+        function resetPermissions() {
+            if (originalPermissions) {
+                updatePermissionMatrix(originalPermissions);
+                showToast('Reset to last saved state', 'success');
+            } else {
+                showToast('No saved state to reset to', 'warning');
+            }
+        }
+
+        function setupPermissionDependencies() {
+            document.querySelectorAll('.perm-view').forEach(view => {
+                view.addEventListener('change', function() {
+                    const row = this.closest('tr');
+                    const actions = row.querySelectorAll('.perm-create, .perm-modify, .perm-delete');
+                    if (!this.checked) {
+                        actions.forEach(cb => {
+                            cb.checked = false;
+                            cb.disabled = true;
+                        });
+                    } else {
+                        actions.forEach(cb => cb.disabled = false);
+                    }
+                });
+            });
+        }
+
+        function applyPermissionDependencies() {
+            document.querySelectorAll('.perm-view').forEach(view => {
+                const row = view.closest('tr');
+                const actions = row.querySelectorAll('.perm-create, .perm-modify, .perm-delete');
+                if (!view.checked) {
+                    actions.forEach(cb => cb.disabled = true);
+                } else {
+                    actions.forEach(cb => cb.disabled = false);
+                }
+            });
+        }
+
+        function openCreateModal() {
+            document.getElementById('roleNameInput').value = '';
+            document.getElementById('createRoleModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createRoleModal').classList.remove('active');
+        }
+
+        async function createRole() {
+            const roleName = document.getElementById('roleNameInput').value.trim();
+
+            if (!roleName) {
+                showToast('Role name is required', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('confirmCreateBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Creating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/Admin/Roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roleName })
+                });
+
+                if (response.ok) {
+                    showToast(`Role '${roleName}' created successfully!`, 'success');
+                    closeCreateModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create role');
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to create role', 'error');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteRole(roleId) {
+            if (!confirm('⚠️ Are you sure you want to delete this role? This action cannot be undone.')) return;
+
+            try {
+                const response = await fetch(`/Admin/Roles/${roleId}`, { method: 'DELETE' });
+
+                if (response.ok) {
+                    showToast('Role deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to delete role');
+                }
+            } catch (error) {
+                showToast(error.message || 'Failed to delete role', 'error');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('permissionMatrix').classList.add('loading');
+        }
+
+        function hideLoading() {
+            document.getElementById('permissionMatrix').classList.remove('loading');
+        }
+
+        function showToast(message, type = 'success') {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.innerHTML = `
+                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.getElementById('createRoleModal')?.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('createRoleModal')) closeCreateModal();
+        });
+    </script>
+}

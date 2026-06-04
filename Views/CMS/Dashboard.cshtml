@@ -1,0 +1,1124 @@
+﻿@using System.Security.Claims
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userName = User?.Identity?.Name ?? "Guest User";
+    var userRole = User?.Claims?.FirstOrDefault(c => c.Type == "RoleName")?.Value ?? "User";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dashboard | MCMS</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: #0a0c12;
+            color: #eef2ff;
+            overflow-x: hidden;
+        }
+
+        /* Background Video */
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            filter: brightness(0.4) blur(3px);
+            transform: scale(1.02);
+        }
+
+        .overlay-dark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.65), rgba(8, 10, 18, 0.85));
+            backdrop-filter: blur(6px);
+            z-index: -1;
+        }
+
+        /* Dashboard Wrapper */
+        .dashboard-wrapper {
+            max-width: 1700px;
+            margin: 0 auto;
+            padding: 4.5rem 2rem 2rem;
+            animation: fadeSlideUp 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        @@keyframes fadeSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== TOP NAVIGATION BAR ========== */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin: -1.5rem -2rem 1.5rem -2rem;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-brand img {
+            height: 40px;
+            width: auto;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+        }
+
+        .nav-brand h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #90caf9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Dropdown Menu Styles - Click to Open */
+        .nav-item-wrapper {
+            position: relative;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            background: transparent;
+            color: #cbd5e1;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .nav-item span.material-symbols-outlined {
+            font-size: 1.2rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: #ffffff;
+        }
+
+        .nav-item.active {
+            /* background: linear-gradient(95deg, #007bff, #2b6eff); */
+            color: white;
+             box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            /* box-shadow: 0 4px 12px rgba(0, 123, 255, 0.08); */
+        }
+
+        /* Dropdown Content - Click to open (not hover) */
+        .dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #1e1f2e;
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 0.5rem 0;
+            min-width: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 200;
+            display: none;
+            margin-top: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-content.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .dropdown-item {
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            width: 100%;
+            background: transparent;
+            border: none;
+            font-family: inherit;
+        }
+
+        .dropdown-item span.material-symbols-outlined {
+            font-size: 1.1rem;
+        }
+
+        .dropdown-item:hover {
+            background: #2d2f44;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+            background: rgba(30, 34, 48, 0.8);
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .notification-badge:hover {
+            background: #1e2a3a;
+        }
+
+        .notification-badge .badge-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 30px;
+            line-height: 1;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(20, 22, 36, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 0.4rem 1rem 0.4rem 0.8rem;
+            border-radius: 60px;
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(145deg, #1e2b3c, #0f172a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid #3b82f6;
+        }
+
+        .user-avatar span {
+            font-size: 22px;
+            color: #90caf9;
+        }
+
+        .user-info-small {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info-small .name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .user-info-small .role {
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: rgba(18, 20, 30, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.5rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            background: rgba(28, 32, 48, 0.8);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .stat-icon {
+            display: inline-flex;
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            color: #3b82f6;
+        }
+
+        .stat-card h3 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: white;
+            margin: 0.5rem 0 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9ca3af;
+        }
+
+        /* Main content row */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .glass-panel {
+            background: rgba(12, 14, 22, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.3rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
+        }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .activity-icon {
+            width: 38px;
+            height: 38px;
+            background: #1e2a3a;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .activity-detail {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+        }
+
+        .activity-time {
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .badge-status {
+            background: #10b98120;
+            color: #6ee7b7;
+            padding: 4px 10px;
+            border-radius: 60px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Chart */
+        .chart-placeholder {
+            margin-top: 10px;
+        }
+
+        .chart-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .chart-label {
+            width: 70px;
+            font-size: 0.8rem;
+        }
+
+        .bar-bg {
+            flex: 1;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            width: 0%;
+            border-radius: 20px;
+            transition: width 1s ease;
+        }
+
+        .percentage {
+            width: 45px;
+            text-align: right;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .action-chip {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 50px;
+            padding: 8px 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .action-chip:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Forms List Panel */
+        .forms-list-panel {
+            background: rgba(12, 14, 22, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 1.5rem;
+        }
+
+        .form-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+
+        .form-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+        }
+
+        .form-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-name {
+            font-weight: 600;
+        }
+
+        .form-date {
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-action-btn {
+            background: rgba(30, 34, 48, 0.8);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .form-action-btn:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Users List Table */
+        .users-table-container {
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .users-table th {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .user-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #10b98120;
+            color: #6ee7b7;
+        }
+
+        .status-inactive {
+            background: #ef444420;
+            color: #fca5a5;
+        }
+
+        .create-user-form {
+            background: rgba(30, 34, 48, 0.5);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-input {
+            background: #1e1f2e;
+            border: 1px solid #2d2f44;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+        }
+
+        .btn-primary {
+            background: linear-gradient(95deg, #007bff, #2b6eff);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        @@media (max-width: 880px) {
+            .dashboard-main {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .dashboard-wrapper {
+                padding: 1rem;
+            }
+            .top-nav {
+                margin: -1rem -1rem 1.5rem -1rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        @@media (max-width: 680px) {
+            .nav-links {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            .top-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .nav-right {
+                justify-content: space-between;
+            }
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.7rem;
+            opacity: 0.5;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 1.5rem;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: #1e1f2e;
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 0.5rem 0;
+            min-width: 180px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 200;
+            display: none;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .dropdown-item-custom {
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #e2e8f0;
+        }
+
+        .dropdown-item-custom:hover {
+            background: #2d2f44;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* Hidden sections */
+        .hidden-section {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop id="bg-video">
+        <source src="assets/bg-1.mp4" type="video/mp4">
+    </video>
+    <div class="overlay-dark"></div>
+
+    <div class="dashboard-wrapper">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><span class="material-symbols-outlined">group</span></div>
+                    <h3 id="totalUsers">1,284</h3>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><span class="material-symbols-outlined">document_scanner</span></div>
+                    <h3 id="totalProjects">47</h3>
+                    <div class="stat-label">Total Forms</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><span class="material-symbols-outlined">task_alt</span></div>
+                    <h3 id="completedTasks">163</h3>
+                <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><span class="material-symbols-outlined">insights</span></div>
+                    <h3 id="growthRate">+22%</h3>
+                    <div class="stat-label">Active Forms</div>
+                </div>
+            </div>
+
+            <!-- Main content: charts & recent activity -->
+            <div class="dashboard-main">
+                <div class="glass-panel">
+                    <div class="panel-title">
+                        <span class="material-symbols-outlined">bar_chart</span>
+                        <span>Engagement Overview</span>
+                    </div>
+                    <div class="chart-placeholder" id="chartContainer">
+                        <div class="chart-bar-item">
+                            <span class="chart-label">Mon</span>
+                            <div class="bar-bg"><div class="bar-fill" data-width="72" style="width: 0%;"></div></div>
+                            <span class="percentage">72%</span>
+                        </div>
+                        <div class="chart-bar-item">
+                            <span class="chart-label">Tue</span>
+                            <div class="bar-bg"><div class="bar-fill" data-width="88" style="width: 0%;"></div></div>
+                            <span class="percentage">88%</span>
+                        </div>
+                        <div class="chart-bar-item">
+                            <span class="chart-label">Wed</span>
+                            <div class="bar-bg"><div class="bar-fill" data-width="65" style="width: 0%;"></div></div>
+                            <span class="percentage">65%</span>
+                        </div>
+                        <div class="chart-bar-item">
+                            <span class="chart-label">Thu</span>
+                            <div class="bar-bg"><div class="bar-fill" data-width="91" style="width: 0%;"></div></div>
+                            <span class="percentage">91%</span>
+                        </div>
+                        <div class="chart-bar-item">
+                            <span class="chart-label">Fri</span>
+                            <div class="bar-bg"><div class="bar-fill" data-width="79" style="width: 0%;"></div></div>
+                            <span class="percentage">79%</span>
+                        </div>
+                    </div>
+                    <div class="quick-actions">
+                        <div class="action-chip" id="viewReportsBtn"><span class="material-symbols-outlined">analytics</span> Full Reports</div>
+                        <div class="action-chip" id="exportDataBtn"><span class="material-symbols-outlined">download</span> Export</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="panel-title">
+                        <span class="material-symbols-outlined">notifications_active</span>
+                        <span>Recent Activity</span>
+                    </div>
+                    <ul class="activity-list" id="activityFeed">
+                        <li class="activity-item">
+                            <div class="activity-icon"><span class="material-symbols-outlined">login</span></div>
+                            <div class="activity-detail"><div class="activity-title">Successful login from new device</div><div class="activity-time">2 minutes ago</div></div>
+                            <div class="badge-status">Secure</div>
+                        </li>
+                        <li class="activity-item"><div class="activity-icon"><span class="material-symbols-outlined">description</span></div><div class="activity-detail"><div class="activity-title">Project 'Alpha' updated</div><div class="activity-time">1 hour ago</div></div></li>
+                        <li class="activity-item"><div class="activity-icon"><span class="material-symbols-outlined">task</span></div><div class="activity-detail"><div class="activity-title">Task #3421 marked completed</div><div class="activity-time">3 hours ago</div></div></li>
+                        <li class="activity-item"><div class="activity-icon"><span class="material-symbols-outlined">groups</span></div><div class="activity-detail"><div class="activity-title">New team member joined</div><div class="activity-time">Yesterday</div></div></li>
+                    </ul>
+                    <div class="quick-actions"><div class="action-chip" id="refreshActivityBtn"><span class="material-symbols-outlined">sync</span> Refresh</div></div>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="margin-top: 0.5rem;">
+                <div class="panel-title"><span class="material-symbols-outlined">widgets</span><span>Quick Access Modules</span></div>
+                <div class="quick-actions">
+                    <div class="action-chip" data-module="users"><span class="material-symbols-outlined">people</span> User Management</div>
+                    <div class="action-chip" data-module="projects"><span class="material-symbols-outlined">folder</span> Projects Hub</div>
+                    <div class="action-chip" data-module="reports"><span class="material-symbols-outlined">receipt</span> Billing</div>
+                    <div class="action-chip" data-module="settings"><span class="material-symbols-outlined">settings</span> Preferences</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forms List Section (Hidden by default) -->
+        <div id="formsListSection" class="hidden-section">
+            <div class="forms-list-panel">
+                <div class="panel-title">
+                    <span class="material-symbols-outlined">format_list_bulleted</span>
+                    <span>Saved Forms</span>
+                </div>
+                <div id="savedFormsList">
+                    <!-- Dynamically populated forms will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Administration Section: Users List -->
+        <div id="usersListSection" class="hidden-section">
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Users List</span>
+                </div>
+                <div class="users-table-container">
+                    <table class="users-table" id="usersTable">
+                        <thead>
+                            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined Date</th></tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Dynamic user rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administration Section: User Creation -->
+        <div id="userCreationSection" class="hidden-section">
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <span class="material-symbols-outlined">person_add</span>
+                    <span>Create New User</span>
+                </div>
+                <div class="create-user-form">
+                    <div class="form-row">
+                        <input type="text" id="newUserName" class="form-input" placeholder="Full Name">
+                        <input type="email" id="newUserEmail" class="form-input" placeholder="Email Address">
+                    </div>
+                    <div class="form-row">
+                        <select id="newUserRole" class="form-input">
+                            <option value="Admin">Admin</option>
+                            <option value="Editor">Editor</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                        <select id="newUserStatus" class="form-input">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <button id="createUserBtn" class="btn-primary">Create User</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">MCMS — Intelligent Content Management System | Secured Access</div>
+    </div>
+
+    <script>
+        (function() {
+            // Authentication & user data
+            let currentUser = sessionStorage.getItem('authenticatedUser');
+            let isAuth = sessionStorage.getItem('isAuthenticated');
+            if (!isAuth || isAuth !== 'true') {
+                if(!currentUser) {
+                    currentUser = 'admin@mcms.com';
+                    sessionStorage.setItem('authenticatedUser', currentUser);
+                    sessionStorage.setItem('isAuthenticated', 'true');
+                }
+            }
+            function formatUserNameFromEmail(email) {
+                if (!email) return "Guest User";
+                const localPart = email.split('@@')[0];
+                return localPart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+            const userNameSpan = document.getElementById('navUserName');
+            if (userNameSpan) userNameSpan.innerText = formatUserNameFromEmail(currentUser);
+            
+            // Stats animation
+            const totalUsersEl = document.getElementById('totalUsers');
+            const totalProjectsEl = document.getElementById('totalProjects');
+            const completedTasksEl = document.getElementById('completedTasks');
+            function animateNumber(element, start, end, duration = 800) {
+                if (!element) return;
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const currentVal = Math.floor(progress * (end - start) + start);
+                    element.innerText = currentVal.toLocaleString();
+                    if (progress < 1) window.requestAnimationFrame(step);
+                    else element.innerText = end.toLocaleString();
+                };
+                window.requestAnimationFrame(step);
+            }
+            animateNumber(totalUsersEl, 1120, 1348, 1000);
+            animateNumber(totalProjectsEl, 38, 51, 800);
+            animateNumber(completedTasksEl, 142, 187, 900);
+            
+            // Bar animation
+            const barFills = document.querySelectorAll('.bar-fill');
+            setTimeout(() => {
+                barFills.forEach(bar => { const w = bar.getAttribute('data-width'); if(w) bar.style.width = w + '%'; });
+            }, 200);
+            
+            // Activity refresh
+            let activitiesMock = [
+                { icon: "login", title: "Successful login from new device", time: "2 minutes ago", badge: "Secure" },
+                { icon: "description", title: "Project 'Alpha' updated", time: "1 hour ago", badge: null },
+                { icon: "task", title: "Task #3421 marked completed", time: "3 hours ago", badge: null },
+                { icon: "groups", title: "New team member joined", time: "Yesterday", badge: null }
+            ];
+            function renderActivityFeed() {
+                const activityList = document.getElementById('activityFeed');
+                if (!activityList) return;
+                activityList.innerHTML = '';
+                activitiesMock.slice(0,5).forEach(act => {
+                    const li = document.createElement('li'); li.className = 'activity-item';
+                    li.innerHTML = `<div class="activity-icon"><span class="material-symbols-outlined">${act.icon}</span></div>
+                        <div class="activity-detail"><div class="activity-title">${act.title}</div><div class="activity-time">${act.time}</div></div>
+                        ${act.badge ? `<div class="badge-status">${act.badge}</div>` : ''}`;
+                    activityList.appendChild(li);
+                });
+            }
+            renderActivityFeed();
+            document.getElementById('refreshActivityBtn')?.addEventListener('click', () => {
+                activitiesMock.unshift({ icon: "sync", title: "Manual refresh • Dashboard synced", time: "Just now", badge: "Live" });
+                if(activitiesMock.length > 5) activitiesMock.pop();
+                renderActivityFeed();
+                showToast("Activity feed refreshed", "#10b981");
+            });
+
+            function updateActiveNav(activeNav) {
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                if (activeNav === 'dashboard') {
+                    document.querySelector('.nav-item[data-nav="dashboard"]')?.classList.add('active');
+                } else if (activeNav === 'form-builder') {
+                    document.getElementById('formBuilderBtn')?.classList.add('active');
+                } else if (activeNav === 'administration') {
+                    document.getElementById('adminBtn')?.classList.add('active');
+                }
+            }
+            
+            // Forms storage and rendering
+            let savedForms = JSON.parse(localStorage.getItem('mcms_forms') || '[]');
+            
+            function loadSavedForms() {
+                const container = document.getElementById('savedFormsList');
+                if (!container) return;
+                if (savedForms.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-slate-400">No saved forms yet. Create one using Form Builder!</div>';
+                    return;
+                }
+                container.innerHTML = savedForms.map((form, index) => `
+                    <div class="form-item">
+                        <div class="form-info">
+                            <div class="form-icon"><span class="material-symbols-outlined">description</span></div>
+                            <div>
+                                <div class="form-name">${escapeHtml(form.name || 'Untitled Form')}</div>
+                                <div class="form-date">Created: ${form.date || 'Unknown date'}</div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="form-action-btn" onclick="window.editForm(${index})">Edit</button>
+                            <button class="form-action-btn" onclick="window.deleteForm(${index})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            window.editForm = function(index) {
+                showToast("Opening form builder...", "#3b82f6");
+                setTimeout(() => { window.location.href = 'Formbuilder.html'; }, 500);
+            };
+            
+            window.deleteForm = function(index) {
+                savedForms.splice(index, 1);
+                localStorage.setItem('mcms_forms', JSON.stringify(savedForms));
+                loadSavedForms();
+                showToast("Form deleted successfully!", "#10b981");
+            };
+            
+            function escapeHtml(str) { 
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m){
+                    if(m==='&') return '&amp;'; 
+                    if(m==='<') return '&lt;'; 
+                    if(m==='>') return '&gt;'; 
+                    return m;
+                }); 
+            }
+            
+            // Users management
+            let usersList = JSON.parse(localStorage.getItem('mcms_users') || '[]');
+            if (usersList.length === 0) {
+                usersList = [
+                    { name: "John Doe", email: "john@mcms.com", role: "Admin", status: "Active", joined: "2024-01-15" },
+                    { name: "Jane Smith", email: "jane@mcms.com", role: "Editor", status: "Active", joined: "2024-02-20" },
+                    { name: "Mike Johnson", email: "mike@mcms.com", role: "Viewer", status: "Inactive", joined: "2024-03-10" }
+                ];
+                localStorage.setItem('mcms_users', JSON.stringify(usersList));
+            }
+            
+            function loadUsersList() {
+                const tbody = document.getElementById('usersTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = usersList.map(user => `
+                    <tr>
+                        <td>${escapeHtml(user.name)}</td>
+                        <td>${escapeHtml(user.email)}</td>
+                        <td>${escapeHtml(user.role)}</td>
+                        <td><span class="user-status ${user.status === 'Active' ? 'status-active' : 'status-inactive'}">${user.status}</span></td>
+                        <td>${user.joined || 'N/A'}</td>
+                    </tr>
+                `).join('');
+                const totalUsersSpan = document.getElementById('totalUsers');
+                if (totalUsersSpan) totalUsersSpan.innerText = usersList.length;
+            }
+            
+            document.getElementById('createUserBtn')?.addEventListener('click', () => {
+                const name = document.getElementById('newUserName').value;
+                const email = document.getElementById('newUserEmail').value;
+                const role = document.getElementById('newUserRole').value;
+                const status = document.getElementById('newUserStatus').value;
+                if (!name || !email) { showToast("Please fill name and email", "#ef4444"); return; }
+                const newUser = { name, email, role, status, joined: new Date().toISOString().split('T')[0] };
+                usersList.push(newUser);
+                localStorage.setItem('mcms_users', JSON.stringify(usersList));
+                loadUsersList();
+                document.getElementById('newUserName').value = '';
+                document.getElementById('newUserEmail').value = '';
+                showToast("User created successfully!", "#10b981");
+            });
+            
+            // Dropdown toggle functions (Click to open/close)
+            function setupDropdown(triggerId, dropdownId) {
+                const trigger = document.getElementById(triggerId);
+                const dropdown = document.getElementById(dropdownId);
+                if (!trigger || !dropdown) return;
+                
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close all other dropdowns first
+                    document.querySelectorAll('.dropdown-content.show').forEach(d => {
+                        if (d.id !== dropdownId) d.classList.remove('show');
+                    });
+                    dropdown.classList.toggle('show');
+                });
+            }
+            
+            setupDropdown('formBuilderBtn', 'formBuilderDropdown');
+            setupDropdown('adminBtn', 'adminDropdown');
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.nav-item-wrapper')) {
+                    document.querySelectorAll('.dropdown-content.show').forEach(d => {
+                        d.classList.remove('show');
+                    });
+                }
+            });
+            
+            // Navigation handlers
+            function showToast(msg, color='#3b82f6') {
+                let toast = document.createElement('div');
+                toast.innerText = msg;
+                toast.style.cssText = `position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 22px;border-radius:50px;font-size:0.85rem;z-index:9999;backdrop-filter:blur(8px);transition:opacity 0.3s`;
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(),400); }, 2200);
+            }
+            
+            // Dropdown item handlers
+            document.querySelectorAll('[data-form-action="builder"]').forEach(btn => {
+                btn.addEventListener('click', () => { window.location.href = 'Formbuilder.html'; });
+            });
+            document.querySelectorAll('[data-form-action="list"]').forEach(btn => {
+                btn.addEventListener('click', () => { showFormsList(); });
+            });
+            document.querySelectorAll('[data-admin-action="users-list"]').forEach(btn => {
+                btn.addEventListener('click', () => { showUsersList(); });
+            });
+            document.querySelectorAll('[data-admin-action="user-creation"]').forEach(btn => {
+                btn.addEventListener('click', () => { showUserCreation(); });
+            });
+            
+            document.querySelectorAll('.nav-item[data-nav="dashboard"]').forEach(btn => {
+                btn.addEventListener('click', () => { showDashboard(); });
+            });
+            document.querySelectorAll('.nav-item[data-nav="projects"]').forEach(btn => {
+                btn.addEventListener('click', () => { showToast("Projects section coming soon!", "#f59e0b"); });
+            });
+            document.querySelectorAll('.nav-item[data-nav="settings"]').forEach(btn => {
+                btn.addEventListener('click', () => { showToast("Settings section coming soon!", "#f59e0b"); });
+            });
+            
+            // User dropdown
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            userMenuBtn?.addEventListener('click', (e) => { e.stopPropagation(); userDropdown.classList.toggle('show'); });
+            document.addEventListener('click', () => { userDropdown?.classList.remove('show'); });
+            document.getElementById('logoutDropdownOption')?.addEventListener('click', () => {
+                sessionStorage.removeItem('isAuthenticated');
+                sessionStorage.removeItem('authenticatedUser');
+                window.location.href = 'Login.html';
+            });
+            document.getElementById('profileOption')?.addEventListener('click', () => showToast("Profile details coming soon", "#3b82f6"));
+            document.getElementById('accountSettingsOption')?.addEventListener('click', () => showToast("Account settings coming soon", "#3b82f6"));
+            document.getElementById('notificationIcon')?.addEventListener('click', () => showToast("3 new notifications", "#8b5cf6"));
+            document.getElementById('viewReportsBtn')?.addEventListener('click', () => showToast("Generating report...", "#10b981"));
+            document.getElementById('exportDataBtn')?.addEventListener('click', () => showToast("Exporting data...", "#f59e0b"));
+            document.querySelectorAll('.action-chip[data-module]').forEach(chip => {
+                chip.addEventListener('click', () => showToast(`Module coming soon!`, "#3b82f6"));
+            });
+            
+            loadUsersList();
+            showDashboard();
+        })();
+    </script>
+</body>
+</html>

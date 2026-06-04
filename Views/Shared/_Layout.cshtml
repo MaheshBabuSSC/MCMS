@@ -1,0 +1,492 @@
+﻿@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORBUS EAM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Your existing styles */
+        :root {
+        --bg-deep: #060913;
+        --bg-panel: rgba(13, 20, 33, 0.85);
+        --bg-card: #0d1527;
+        --bg-hover: #15223c;
+        --border: rgba(30, 45, 69, 0.7);
+        --border-lit: #00c8ff;
+        --accent: #00c8ff;
+        --accent-dim: #0096c0;
+        --amber: #f5a623;
+        --emerald: #00e09e;
+        --crimson: #ff4757;
+        --violet: #9b59ff;
+        --text-1: #e8eef5;
+        --text-2: #8a9db8;
+        --text-3: #4a6080;
+        }
+
+        * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        }
+
+        body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg-deep);
+        color: var(--text-1);
+        min-height: 100vh;
+        overflow-x: hidden;
+        }
+
+        body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse 50% 35% at 80% 10%, rgba(0,200,255,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 50% at 10% 80%, rgba(155,89,255,0.05) 0%, transparent 60%);
+        pointer-events: none;
+        z-index: 0;
+        }
+
+        .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 72px;
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 1000;
+        backdrop-filter: blur(24px) saturate(200%);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        animation: slideDown 0.6s ease-out;
+        padding-left: 5px;
+        }
+
+        .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+        margin-left: 5px;
+        }
+
+        .logo img {
+        width: 180px;
+        height: 40px;
+        object-fit: contain;
+        }
+
+        .nav-container {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        gap: 8px;
+        }
+
+        .nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 42px;
+        gap: 5px;
+        padding: 0 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 13px;
+        color: var(--text-2);
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        }
+
+        .nav-item.active {
+        background: rgba(0,200,255,0.1);
+        color: var(--accent);
+        border: 1px solid rgba(0,200,255,0.2);
+        }
+
+        .dropdown {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 42px;
+        }
+
+        .dropdown-menu {
+        position: absolute;
+        top: 102%;
+        left: 0;
+        min-width: 210px;
+        background: rgba(13, 21, 39, 0.95);
+        backdrop-filter: blur(25px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-top: 0;
+        padding: 8px;
+        display: none;
+        z-index: 1001;
+        }
+
+        .dropdown.open .dropdown-menu {
+        display: block;
+        }
+
+        .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 10px;
+        color: var(--text-2);
+        text-decoration: none;
+        font-size: 13px;
+        border-radius: 8px;
+        transition: 0.2s;
+        margin-bottom: 4px;
+        }
+
+        .dropdown-item:hover {
+        background: var(--bg-hover);
+        color: var(--text-1);
+        }
+
+        .dropdown-item .item-icon {
+        font-size: 14px;
+        width: 18px;
+        text-align: center;
+        opacity: 0.7;
+        }
+
+        .dropdown-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 6px 8px;
+        }
+
+        .dropdown-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-3);
+        padding: 6px 14px 4px;
+        }
+
+        .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 1px solid var(--border);
+        cursor: pointer;
+        position: relative;
+        right: 15px;
+        }
+
+        .user-av {
+        width: 35px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--amber), var(--crimson));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        border: 2px solid var(--border);
+        }
+
+        .user-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        min-width: 150px;
+        background: rgba(13, 21, 39, 0.95);
+        backdrop-filter: blur(25px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-top: 5px;
+        padding: 8px;
+        display: none;
+        z-index: 1001;
+        }
+
+        .user-pill:hover .user-dropdown-menu {
+        display: block;
+        }
+
+        .container-fluid {
+        padding: 80px 20px 40px 20px;
+        position: relative;
+        z-index: 1;
+        }
+
+        .content-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        backdrop-filter: blur(12px);
+        }
+
+        @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+        }
+
+        @@keyframes fadeInUp {
+        from {
+        opacity: 0;
+        transform: translateY(8px);
+        }
+        to {
+        opacity: 1;
+        transform: translateY(0);
+        }
+        }
+
+        @@keyframes slideDown {
+        from {
+        opacity: 0;
+        transform: translateY(-20px);
+        }
+        to {
+        opacity: 1;
+        transform: translateY(0);
+        }
+        }
+
+        ::-webkit-scrollbar {
+        width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+        background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+        background: var(--text-3);
+        border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+        background: var(--border-lit);
+        }
+
+        .dropdown-item.active {
+        background: rgba(0, 200, 255, 0.15) !important;
+        color: var(--accent) !important;
+        font-weight: 600;
+        }
+
+        .hidden-nav {
+        display: none !important;
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    @{
+        // Get user info from Claims
+        string userName = "Guest";
+        string roleName = "";
+        int roleId = 0;
+        
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            userName = User.Identity.Name ?? "User";
+            roleName = User.FindFirstValue("RoleName") ?? "User";
+            string roleIdStr = User.FindFirstValue("RoleId");
+            int.TryParse(roleIdStr, out roleId);
+        }
+        
+        // ========== DYNAMIC PERMISSION CHECKS FROM CLAIMS ==========
+        // Read permissions directly from claims (set during login from database)
+        bool canViewManageForms = User.Claims.FirstOrDefault(c => c.Type == "Perm_Manage Forms_View")?.Value == "True";
+        bool canCreateManageForms = User.Claims.FirstOrDefault(c => c.Type == "Perm_Manage Forms_Create")?.Value == "True";
+        bool canModifyManageForms = User.Claims.FirstOrDefault(c => c.Type == "Perm_Manage Forms_Modify")?.Value == "True";
+        bool canDeleteManageForms = User.Claims.FirstOrDefault(c => c.Type == "Perm_Manage Forms_Delete")?.Value == "True";
+        bool canViewUserManagement = User.Claims.FirstOrDefault(c => c.Type == "Perm_User Management_View")?.Value == "True";
+        bool canCreateUserManagement = User.Claims.FirstOrDefault(c => c.Type == "Perm_User Management_Create")?.Value == "True";
+    }
+
+    <nav class="navbar">
+        <a class="logo" asp-controller="Auth" asp-action="Dashboard">
+            <div class="logo">
+                <img src="~/assets/Orbus_Logo.png" alt="Logo">
+                </div>
+            </a>
+
+            <div class="nav-container">
+                <!-- Dashboard - Everyone can see -->
+                <a class="nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")"
+                       asp-controller="Auth" asp-action="Dashboard">
+                    <i class="fa-solid fa-house nav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- ========== DYNAMIC MENU BASED ON PERMISSIONS ========== -->
+                @if (canViewManageForms)
+                {
+                    <!-- User has permission to view Manage Forms - Show dropdown -->
+                    <div class="dropdown">
+                        <a class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && (ViewContext.RouteData.Values["Action"]?.ToString() == "FormBuilder" || ViewContext.RouteData.Values["Action"]?.ToString() == "FormsList") ? "active" : "")">
+                            <i class="fa-solid fa-clipboard-list nav-icon"></i>
+                            <span>Manage Forms</span>
+                            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <!-- Form Builder - Only if user has Create permission -->
+                            @if (canCreateManageForms)
+                            {
+                                <a class="dropdown-item" asp-controller="Admin" asp-action="FormBuilder">
+                                    <i class="fa-solid fa-screwdriver-wrench item-icon"></i>
+                                    Form Builder
+                                </a>
+                            }
+                            <!-- Forms List - Everyone with View permission -->
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="FormsListView">
+                                <i class="fa-solid fa-list item-icon"></i>
+                                Forms List
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- User has NO permission to view Manage Forms - Show simple My Forms link -->
+                    <a class="nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "FormsListView" ? "active" : "")"
+                           asp-controller="Admin" asp-action="FormsListView">
+                        <i class="fa-solid fa-file-alt nav-icon"></i>
+                        <span>Form List</span>
+                    </a>
+                }
+
+                <!-- User Management - Only if user has View permission -->
+                @if (canViewUserManagement)
+                {
+                    <div class="dropdown">
+                        <a class="nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && (ViewContext.RouteData.Values["Action"]?.ToString() == "UserCreation" || ViewContext.RouteData.Values["Action"]?.ToString() == "UserList" || ViewContext.RouteData.Values["Action"]?.ToString() == "Roles") ? "active" : "")">
+                            <i class="fa-solid fa-user-cog nav-icon"></i>
+                            <span>User Management</span>
+                            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            @if (canCreateUserManagement)
+                            {
+                                <a class="dropdown-item" asp-controller="Admin" asp-action="UserCreation">
+                                    <i class="fa-solid fa-user-plus item-icon"></i>
+                                    Create User
+                                </a>
+                            }
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="UserList">
+                                <i class="fa-solid fa-users item-icon"></i>
+                                User List
+                            </a>
+                            <a class="dropdown-item" asp-controller="Admin" asp-action="Roles">
+                                <i class="fa-solid fa-shield-halved item-icon"></i>
+                                Roles
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="user-pill">
+                <div class="user-av">@(userName.Length > 0 ? userName[0].ToString().ToUpper() : "A")</div>
+                <div>
+                    <div class="user-name" style="font-size:12px; font-weight:600;">@userName</div>
+                    <div class="user-role" style="font-size:10px; color:var(--text-3);">@roleName</div>
+                </div>
+                <div class="user-dropdown-menu">
+                    <div class="dropdown-label">Account</div>
+                    <a class="dropdown-item" href="#">
+                        <i class="fa-solid fa-user item-icon"></i>
+                        Profile
+                    </a>
+                    <a class="dropdown-item" href="#">
+                        <i class="fa-solid fa-gear item-icon"></i>
+                        Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="margin: 0;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item" style="width: 100%; background: transparent; border: none; cursor: pointer;">
+                            <i class="fa-solid fa-sign-out-alt item-icon"></i>
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid">
+            @RenderBody()
+        </div>
+
+        @await RenderSectionAsync("Scripts", required: false)
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            // Open / close dropdown only on click
+            document.querySelectorAll('.dropdown > .nav-item').forEach(nav => {
+            nav.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropdown = this.closest('.dropdown');
+            document.querySelectorAll('.dropdown').forEach(d => {
+            if (d !== dropdown) d.classList.remove('open');
+            });
+            dropdown.classList.toggle('open');
+            });
+            });
+
+            // Close dropdown after selecting any dropdown item
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function () {
+            document.querySelectorAll('.dropdown').forEach(d => {
+            d.classList.remove('open');
+            });
+            });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+            if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown').forEach(d => {
+            d.classList.remove('open');
+            });
+            }
+            });
+
+            // Active menu handling
+            const currentPath = window.location.pathname.toLowerCase();
+
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+            const itemHref = item.getAttribute('href')?.toLowerCase();
+            if (itemHref && currentPath.includes(itemHref)) {
+            item.classList.add('active');
+            const parentNav = item.closest('.dropdown')?.querySelector('.nav-item');
+            if (parentNav) {
+            parentNav.classList.add('active');
+            }
+            }
+            });
+
+            document.querySelectorAll('.nav-container > .nav-item').forEach(nav => {
+            const navHref = nav.getAttribute('href')?.toLowerCase();
+            if (navHref && navHref !== "#" && navHref !== "/" && currentPath.includes(navHref)) {
+            nav.classList.add('active');
+            }
+            });
+            });
+        </script>
+    </body>
+</html>
