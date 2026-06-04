@@ -347,6 +347,13 @@
     </style>
 </head>
 <body>
+    <!-- Add this hidden form for non-AJAX login -->
+    <form id="hiddenLoginForm" method="post" action="/Login" style="display:none;">
+        <input type="hidden" name="Email" id="hiddenEmail">
+        <input type="hidden" name="Password" id="hiddenPassword">
+        <input type="hidden" name="RememberMe" id="hiddenRememberMe" value="false">
+        @Html.AntiForgeryToken()
+    </form>
     <video autoplay muted loop id="bg-video">
         <source src="~/assets/bg-1.mp4" type="video/mp4">
     </video>
@@ -441,86 +448,112 @@
             var csrfToken = $('meta[name="csrf-token"]').attr('content');
             
             // Login with jQuery AJAX
-            $('#loginBtn').on('click', function(e) {
-                e.preventDefault();
+            // $('#loginBtn').on('click', function(e) {
+            //     e.preventDefault();
                 
-                var email = $('#email').val().trim();
-                var password = $('#password').val();
-                var rememberMe = $('#rememberCheckbox').is(':checked');
-                var $btn = $(this);
+            //     var email = $('#email').val().trim();
+            //     var password = $('#password').val();
+            //     var rememberMe = $('#rememberCheckbox').is(':checked');
+            //     var $btn = $(this);
                 
-                // Clear previous errors
-                $('.custom-toast-alert').remove();
+            //     Clear previous errors
+            //     $('.custom-toast-alert').remove();
                 
-                if (email === "") {
-                    showErrorAlert("Email required", "Please enter your email address.");
-                    $('#email').focus();
-                    return;
-                }
-                if (password === "") {
-                    showErrorAlert("Password required", "Please enter your password.");
-                    $('#password').focus();
-                    return;
-                }
+            //     if (email === "") {
+            //         showErrorAlert("Email required", "Please enter your email address.");
+            //         $('#email').focus();
+            //         return;
+            //     }
+            //     if (password === "") {
+            //         showErrorAlert("Password required", "Please enter your password.");
+            //         $('#password').focus();
+            //         return;
+            //     }
                 
-                // Show loading state
-                var originalText = $btn.find('.btn-text').text();
-                $btn.find('.btn-text').html('<div class="spinner" style="margin:0 auto;"></div>');
-                $btn.prop('disabled', true);
+            //     Show loading state
+            //     var originalText = $btn.find('.btn-text').text();
+            //     $btn.find('.btn-text').html('<div class="spinner" style="margin:0 auto;"></div>');
+            //     $btn.prop('disabled', true);
                 
-                $.ajax({
-                    url: '/Login',
-                    type: 'POST',
-                    data: {
-                        Email: email,
-                        Password: password,
-                        RememberMe: rememberMe,
-                        __RequestVerificationToken: csrfToken
-                    },
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    success: function(response) {
-                        // Check if response contains OTP page content
-                        if (response.indexOf('Verify OTP') !== -1 || response.indexOf('otp-container') !== -1) {
-                            window.location.href = '/Authentication';
-                        } else if (response.indexOf('redirect') !== -1) {
-                            try {
-                                var jsonResponse = JSON.parse(response);
-                                if (jsonResponse.redirectUrl) {
-                                    window.location.href = jsonResponse.redirectUrl;
-                                    return;
-                                }
-                            } catch(e) {}
-                            window.location.href = '/Authentication';
-                        } else {
-                            // Try to extract error message
-                            var errorMsg = "Invalid email or password!";
-                            var temp = $('<div>').html(response);
-                            if (temp.find('.error-message').length) {
-                                errorMsg = temp.find('.error-message').text().trim();
-                            }
-                            showErrorAlert('Login Failed', errorMsg);
-                            $('#password').val('');
-                            $('#password').focus();
-                        }
-                    },
-                    error: function(xhr) {
-                        if (xhr.status === 302) {
-                            window.location.href = '/Authentication';
-                        } else {
-                            showErrorAlert('Error', 'Something went wrong. Please try again.');
-                            $('#password').val('');
-                        }
-                    },
-                    complete: function() {
-                        $btn.find('.btn-text').html(originalText);
-                        $btn.prop('disabled', false);
-                    }
-                });
-            });
+            //     $.ajax({
+            //         url: '/Login',
+            //         type: 'POST',
+            //         data: {
+            //             Email: email,
+            //             Password: password,
+            //             RememberMe: rememberMe,
+            //             __RequestVerificationToken: csrfToken
+            //         },
+            //         xhrFields: {
+            //             withCredentials: true
+            //         },
+            //         success: function(response) {
+            //             Check if response contains OTP page content
+            //             if (response.indexOf('Verify OTP') !== -1 || response.indexOf('otp-container') !== -1) {
+            //                 window.location.href = '/Authentication';
+            //             } else if (response.indexOf('redirect') !== -1) {
+            //                 try {
+            //                     var jsonResponse = JSON.parse(response);
+            //                     if (jsonResponse.redirectUrl) {
+            //                         window.location.href = jsonResponse.redirectUrl;
+            //                         return;
+            //                     }
+            //                 } catch(e) {}
+            //                 window.location.href = '/Authentication';
+            //             } else {
+            //                 Try to extract error message
+            //                 var errorMsg = "Invalid email or password!";
+            //                 var temp = $('<div>').html(response);
+            //                 if (temp.find('.error-message').length) {
+            //                     errorMsg = temp.find('.error-message').text().trim();
+            //                 }
+            //                 showErrorAlert('Login Failed', errorMsg);
+            //                 $('#password').val('');
+            //                 $('#password').focus();
+            //             }
+            //         },
+            //         error: function(xhr) {
+            //             if (xhr.status === 302) {
+            //                 window.location.href = '/Authentication';
+            //             } else {
+            //                 showErrorAlert('Error', 'Something went wrong. Please try again.');
+            //                 $('#password').val('');
+            //             }
+            //         },
+            //         complete: function() {
+            //             $btn.find('.btn-text').html(originalText);
+            //             $btn.prop('disabled', false);
+            //         }
+            //     });
+            // });
             
             // Send OTP for forgot password
+        $('#loginBtn').on('click', function(e) {
+        e.preventDefault();
+
+        var email = $('#email').val().trim();
+        var password = $('#password').val();
+        var rememberMe = $('#rememberCheckbox').is(':checked');
+
+        if (email === "") {
+        showErrorAlert("Email required", "Please enter your email address.");
+        $('#email').focus();
+        return;
+        }
+        if (password === "") {
+        showErrorAlert("Password required", "Please enter your password.");
+        $('#password').focus();
+        return;
+        }
+
+        // Set values in hidden form
+        $('#hiddenEmail').val(email);
+        $('#hiddenPassword').val(password);
+        $('#hiddenRememberMe').val(rememberMe);
+
+        // Submit the form (browser handles redirect automatically)
+        $('#hiddenLoginForm').submit();
+        });
             $('#sendOtpBtn').on('click', function() {
                 var email = $('#fpEmail').val().trim();
                 if (!email) {
