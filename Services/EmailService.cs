@@ -25,7 +25,8 @@ namespace CMS.Services
 
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
             _logger.LogDebug("Connecting to SMTP host {Host}", _config["Email:Host"]);
-
+            _logger.LogInformation("SMTP Host: {Host}", _config["Email:Host"]);
+            _logger.LogInformation("SMTP Port: {Port}", _config["Email:Port"]);
             await smtp.ConnectAsync(
                 _config["Email:Host"],
                 int.Parse(_config["Email:Port"]),
